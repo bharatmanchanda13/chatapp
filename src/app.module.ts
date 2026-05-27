@@ -7,9 +7,10 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtModule } from './jwt/jwt.module';
 import { FriendModule } from './friend/friend.module';
+import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule, FriendModule],
+  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],
 })

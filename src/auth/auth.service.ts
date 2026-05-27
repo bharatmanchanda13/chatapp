@@ -3,7 +3,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from 'src/jwt/jwt.service';
+import { JwtService } from '../jwt/jwt.service';
 
 @Injectable()
 export class AuthService {
@@ -31,13 +31,8 @@ export class AuthService {
             );
         }
 
-        const { accessToken, refreshToken } = await this.jwtService.generateTokens(existingUser);
-        const {
-            password,
-            accessTokens,
-            refreshTokens,
-            ...safeUser
-        } = existingUser;
+        const { password, accessTokens, refreshTokens, ...safeUser } = existingUser;
+        const { accessToken, refreshToken } = await this.jwtService.generateTokens(safeUser);
         return {
             user: safeUser,
             accessToken,

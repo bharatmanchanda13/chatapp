@@ -3,8 +3,8 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import type { Request } from 'express';
-import { JwtService } from 'src/jwt/jwt.service';
-import { AuthGuard } from './auth.guard';
+import { JwtService } from '../jwt/jwt.service';
+import { AuthGuard } from './guards/auth.guard';
 import { LogoutDto } from './dto/logout.dto';
 
 @Controller('auth')
