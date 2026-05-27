@@ -6,11 +6,13 @@ import { AuthService } from './auth/auth.service';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtModule } from './jwt/jwt.module';
+import { FriendModule } from './friend/friend.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule],
+  imports: [AuthModule, PrismaModule, JwtModule, FriendModule],
   controllers: [AppController, AuthController],
   providers: [AppService, AuthService],
 })
 export class AppModule { }
+
 

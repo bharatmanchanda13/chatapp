@@ -16,6 +16,11 @@ enum Role {
   ADMIN
 }
 
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
@@ -26,6 +31,50 @@ model User {
   isActive  Boolean  @default(true)
   accessTokens String[] @default([])
   refreshTokens String[] @default([])
+  sentFriendRequests FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  friendshipsOne Friendship[] @relation("FriendshipsOne")
+  friendshipsTwo Friendship[] @relation("FriendshipsTwo")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+model FriendRequest {
+  id Int @id @default(autoincrement())
+
+  senderId Int
+  receiverId Int
+
+  sender User @relation("SentFriendRequests", fields: [senderId], references: [id])
+
+  receiver User @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+
+  status FriendRequestStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Friendship {
+  id Int @id @default(autoincrement())
+
+  userOneId Int
+  userTwoId Int
+
+  userOne User @relation("FriendshipsOne", fields: [userOneId], references: [id])
+
+  userTwo User @relation("FriendshipsTwo", fields: [userTwoId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userOneId, userTwoId])
+
+  @@index([userOneId])
+  @@index([userTwoId])
 }
