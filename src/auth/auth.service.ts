@@ -3,13 +3,46 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from 'src/jwt/jwt.service';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
 
     async login(dto: LoginDto): Promise<any> {
-        
+        const existingUser = await this.prisma.user.findFirst({
+            where: {
+            OR: [
+                { email: dto.username },
+                { phone: dto.username },
+            ],
+            },
+        });
+        if (!existingUser) {
+            throw new BadRequestException(
+                'Invalid credentials',
+            );
+        }
+
+        const isPasswordValid = await bcrypt.compare(dto.password, existingUser.password);
+        if (!isPasswordValid) {
+            throw new BadRequestException(
+                'Invalid credentials',
+            );
+        }
+
+        const { accessToken, refreshToken } = await this.jwtService.generateTokens(existingUser);
+        const {
+            password,
+            accessTokens,
+            refreshTokens,
+            ...safeUser
+        } = existingUser;
+        return {
+            user: safeUser,
+            accessToken,
+            refreshToken
+        };
     }
 
     async register(dto: RegisterDto): Promise<any> {
