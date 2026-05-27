@@ -71,4 +71,8 @@ export class AuthService {
         });
         return user;
     }
+
+    async logout(userId: number) {
+        // await this.jwtService.revokeTokens(userId); // Revoke the user's tokens.
+    }
 }
