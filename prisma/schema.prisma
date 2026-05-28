@@ -21,6 +21,25 @@ enum FriendRequestStatus {
   ACCEPTED
 }
 
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
@@ -35,6 +54,15 @@ model User {
   receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
   friendshipsOne Friendship[] @relation("FriendshipsOne")
   friendshipsTwo Friendship[] @relation("FriendshipsTwo")
+
+  conversations ConversationParticipant[]
+
+  messages Message[]
+
+  messageReads MessageRead[]
+
+  createdConversations Conversation[] @relation("ConversationCreator")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -77,4 +105,96 @@ model Friendship {
 
   @@index([userOneId])
   @@index([userTwoId])
+}
+
+model Conversation {
+  id Int @id @default(autoincrement())
+
+  type ConversationType
+
+  name String?
+
+  image String?
+
+  participants ConversationParticipant[]
+
+  messages Message[]
+
+  createdById Int?
+
+  createdBy User? @relation("ConversationCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+}
+
+model ConversationParticipant {
+  id Int @id @default(autoincrement())
+
+  conversationId Int
+
+  userId Int
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  isAdmin Boolean @default(false)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([conversationId, userId])
+
+  @@index([conversationId])
+
+  @@index([userId])
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+
+  conversationId Int
+
+  senderId Int
+
+  content String
+
+  type MessageType @default(TEXT)
+
+  status MessageStatus @default(SENT)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  sender User @relation(fields: [senderId], references: [id])
+
+  reads MessageRead[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([conversationId])
+
+  @@index([senderId])
+}
+
+model MessageRead {
+  id Int @id @default(autoincrement())
+
+  messageId Int
+
+  userId Int
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  readAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+
+  @@index([messageId])
+
+  @@index([userId])
 }
