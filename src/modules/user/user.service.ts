@@ -3,18 +3,31 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
 import { RegisterDto } from '../auth/dto/register.dto';
+import { PaginationService } from 'src/common/pagination/pagination.service';
+import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 
 @Injectable()
 export class UserService {
-    constructor(private readonly prisma: PrismaService, private readonly authService: AuthService) {}
-    async getList() {
-        return this.prisma.user.findMany({
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly authService: AuthService,
+        private paginationService: PaginationService
+    ) {}
+    async getList(pageDto: PaginationDto) {
+        return this.paginationService.paginate(this.prisma.user, {
+            page: pageDto.page,
+            limit: pageDto.limit,
+
             select: {
                 id: true,
                 name: true,
                 email: true,
                 phone: true,
                 role: true,
+            },
+
+            orderBy: {
+                id: 'desc',
             },
         });
     }

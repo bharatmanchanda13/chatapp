@@ -168,6 +168,7 @@ export class FriendService {
             return {
                 id: friend.id,
                 name: friend.name,
+                friendshipId: f.id,
             };
         });
     }

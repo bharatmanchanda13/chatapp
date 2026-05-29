@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { FriendService } from './friend.service';
 import { SendFriendRequestDto } from './dto/send-friend-request.dto';
 import { RespondFriendRequestDto } from './dto/respond-friend-request.dto';
@@ -11,7 +11,6 @@ export class FriendController {
     @UseGuards(AuthGuard)
     @Post('request')
     async sendFriendRequest(@Req() req: Request, @Body() dto: SendFriendRequestDto) {
-        console.log('Received friend request:', dto);
         const senderId = req['user'].id;
         return this.friendService.sendFriendRequest(senderId, dto.receiverId);
     }

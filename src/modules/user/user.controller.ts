@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards, Delete, Put, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Delete, Put, Body, Param, Query } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -6,16 +6,18 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 import { RegisterDto } from '../auth/dto/register.dto';
+import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 
 @Controller('user')
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
+    @UseGuards(AuthGuard)
+    // @UseGuards(AuthGuard, RolesGuard)
+    // @Roles(Role.ADMIN)
     @Get()
-    async getList() {
-        return this.userService.getList();
+    async getList(@Query() pageDto: PaginationDto) {
+        return this.userService.getList(pageDto);
     }
 
     @UseGuards(AuthGuard, RolesGuard)
