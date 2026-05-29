@@ -52,7 +52,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 		client.join(room);
 
-        console.log(dto.id, client.id,"::dto")
 		this.onlineUserService.addUser(dto.id, client.id);
 
 		this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
@@ -61,12 +60,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 			success: true,
 		};
 	}
-
-	/*
-	==========================================
-	SEND MESSAGE
-	==========================================
-	*/
 
 	@SubscribeMessage(CHAT_EVENTS.SEND_MESSAGE)
 	async sendMessage(
@@ -143,7 +136,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		@MessageBody()
 		data: {
 			messageId: number;
-
 			userId: number;
 		},
 	) {
@@ -151,7 +143,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 		this.server.emit(
 			CHAT_EVENTS.MESSAGE_READ,
-
 			read,
 		);
 
