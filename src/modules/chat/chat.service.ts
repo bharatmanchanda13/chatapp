@@ -163,7 +163,7 @@ export class ChatService {
             throw new ForbiddenException('You cannot mark your own message as read');
         }
 
-        await this.prisma.message.update({
+        const updated = await this.prisma.message.update({
             where: {
                 id: messageId,
             },
@@ -175,6 +175,20 @@ export class ChatService {
         return {
             success: true,
             message: 'Message marked as read',
+            messageId: updated.id,
+            conversationId: updated.conversationId,
+            status: updated.status,
         };
+    }
+
+    async getConversationParticipants(conversationId: number) {
+        return this.prisma.conversationParticipant.findMany({
+            where: {
+                conversationId,
+            },
+            select: {
+                userId: true,
+            },
+        });
     }
 }

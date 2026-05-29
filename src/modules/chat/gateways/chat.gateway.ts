@@ -71,14 +71,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 			.to(`conversation:${dto.conversationId}`)
 			.emit(CHAT_EVENTS.RECEIVE_MESSAGE, message);
 
+		try {
+			const participants = await this.chatService.getConversationParticipants(dto.conversationId);
+			for (const p of participants) {
+				this.server
+					.to(`user:${p.userId}`)
+					.emit(CHAT_EVENTS.RECEIVE_MESSAGE, message);
+			}
+		} catch (err) {
+			console.error('Failed to broadcast message to user rooms:', err);
+		}
+
 		return message;
 	}
-
-	/*
-	==========================================
-	UPDATE MESSAGE
-	==========================================
-	*/
 
 	@SubscribeMessage(CHAT_EVENTS.UPDATE_MESSAGE)
 	async updateMessage(
@@ -93,12 +98,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 		return updatedMessage;
 	}
-
-	/*
-	==========================================
-	DELETE MESSAGE
-	==========================================
-	*/
 
 	@SubscribeMessage(CHAT_EVENTS.DELETE_MESSAGE)
 	async deleteMessage(
@@ -125,12 +124,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		return deleted;
 	}
 
-	/*
-	==========================================
-	MARK MESSAGE AS READ
-	==========================================
-	*/
-
 	@SubscribeMessage(CHAT_EVENTS.MARK_READ)
 	async markAsRead(
 		@MessageBody()
@@ -141,19 +134,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	) {
 		const read = await this.chatService.markAsRead(data.messageId, data.userId);
 
-		this.server.emit(
-			CHAT_EVENTS.MESSAGE_READ,
-			read,
-		);
+		if (read && read.conversationId) {
+			this.server
+				.to(`conversation:${read.conversationId}`)
+				.emit(CHAT_EVENTS.MESSAGE_READ, read);
+		} else {
+			this.server.emit(
+				CHAT_EVENTS.MESSAGE_READ,
+				read,
+			);
+		}
 
 		return read;
 	}
-
-	/*
-	==========================================
-	JOIN CONVERSATION ROOM
-	==========================================
-	*/
 
 	@SubscribeMessage('join-conversation')
 	async joinConversation(
@@ -171,12 +164,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 			success: true,
 		};
 	}
-
-	/*
-	==========================================
-	TYPING INDICATOR
-	==========================================
-	*/
 
 	@SubscribeMessage(CHAT_EVENTS.TYPING)
 	async typing(
