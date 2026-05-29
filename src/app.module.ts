@@ -10,12 +10,13 @@ import { ChatService } from './modules/chat/chat.service';
 import { ConversationController } from './modules/conversation/conversation.controller';
 import { ConversationService } from './modules/conversation/conversation.service';
 import { ChatGateway } from './modules/chat/gateways/chat.gateway';
+import { CallGateway } from './modules/chat/gateways/call.gateway';
 import { OnlineUserService } from './modules/chat/online-user.service';
 
 @Module({
   imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule],
   controllers: [AppController, ConversationController],
-  providers: [AppService, ChatService, ConversationService, ChatGateway, OnlineUserService],
+  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, OnlineUserService],
 })
 export class AppModule { }
 
