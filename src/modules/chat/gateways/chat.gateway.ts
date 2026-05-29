@@ -9,18 +9,13 @@ import {
 } from '@nestjs/websockets';
 
 import { Server } from 'socket.io';
-
 import { ChatService } from '../chat.service';
-
 import { OnlineUserService } from '../online-user.service';
-
 import { CHAT_EVENTS } from '../events';
-
 import { SendMessageDto } from '../dto/send-message.dto';
-
 import { UpdateMessageDto } from '../dto/update-message.dto';
-
 import type { SocketUser } from '../interfaces/socket-user.interface';
+import { JoinUserDto } from '../dto/join-user.dto';
 
 @WebSocketGateway({
 	cors: {
@@ -34,7 +29,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	constructor(
 		private readonly chatService: ChatService,
 		private readonly onlineUserService: OnlineUserService,
-	) { }
+	) {}
 
 	handleConnection(client: SocketUser) {
 		console.log('User Connected:', client.id);
@@ -50,33 +45,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		console.log('User Disconnected:', client.id);
 	}
 
-	/*
-	==========================================
-	JOIN SOCKET
-	==========================================
-	*/
-
 	@SubscribeMessage(CHAT_EVENTS.JOIN)
 	async joinChat(
-		@MessageBody()
-		data: {
-			userId: number;
-		},
-
-		@ConnectedSocket()
-		client: SocketUser,
-	) {
-		const room = `user:${data.userId}`;
+        @MessageBody() dto: JoinUserDto,
+	    @ConnectedSocket() client: SocketUser
+    ) {
+		const room = `user:${dto.id}`;
 
 		client.join(room);
+        console.log(`User ${dto.id} joined ${client.id}`);
+		this.onlineUserService.addUser(dto.id, client.id);
 
-		this.onlineUserService.addUser(data.userId, client.id);
-
-		this.server.emit(
-			CHAT_EVENTS.ONLINE_USERS,
-
-			this.onlineUserService.getOnlineUsers(),
-		);
+		this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
 
 		return {
 			success: true,

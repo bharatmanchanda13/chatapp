@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsString } from 'class-validator';
 
 export enum MessageType {
 	TEXT = 'TEXT',
