@@ -38,10 +38,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	handleDisconnect(client: SocketUser) {
 		this.onlineUserService.removeUser(client.id);
 
-		this.server.emit(
-			CHAT_EVENTS.ONLINE_USERS,
-			this.onlineUserService.getOnlineUsers(),
-		);
+		this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
+        
 		console.log('User Disconnected:', client.id);
 	}
 
@@ -53,7 +51,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		const room = `user:${dto.id}`;
 
 		client.join(room);
-        console.log(`User ${dto.id} joined ${client.id}`);
+
+        console.log(dto.id, client.id,"::dto")
 		this.onlineUserService.addUser(dto.id, client.id);
 
 		this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
@@ -71,8 +70,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 	@SubscribeMessage(CHAT_EVENTS.SEND_MESSAGE)
 	async sendMessage(
-		@MessageBody()
-		dto: SendMessageDto,
+		@MessageBody() dto: SendMessageDto,
 	) {
 		const message = await this.chatService.sendMessage(dto);
 
