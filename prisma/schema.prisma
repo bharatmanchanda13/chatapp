@@ -130,7 +130,9 @@ model Profile {
 
   lookingFor String?
 
-  location String?
+  latitude Float?
+
+  longitude Float?
 
   relationshipStatus RelationshipStatus?
 
@@ -141,7 +143,6 @@ model Profile {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([location])
 }
 
 model UserBlock {

@@ -4,19 +4,22 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
 import { RegisterDto } from '../auth/dto/register.dto';
 import { PaginationService } from 'src/common/pagination/pagination.service';
-import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
+import { UserFilterDto } from './dto/user-filter.dto';
+import { UserFilterBuilder } from './user-filter.builder';
 
 @Injectable()
 export class UserService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly authService: AuthService,
-        private paginationService: PaginationService
+        private readonly paginationService: PaginationService,
+        private readonly userFilterBuilder: UserFilterBuilder,
     ) {}
-    async getList(pageDto: PaginationDto) {
+    async getList(dto: UserFilterDto) {
+
         return this.paginationService.paginate(this.prisma.user, {
-            page: pageDto.page,
-            limit: pageDto.limit,
+            page: dto.page,
+            limit: dto.perPage,
 
             select: {
                 id: true,
@@ -27,9 +30,7 @@ export class UserService {
                 profile: true,
             },
 
-            where: {
-                role: 'USER',
-            },
+            where: this.userFilterBuilder.build(dto),
 
             orderBy: {
                 id: 'desc',

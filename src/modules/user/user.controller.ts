@@ -6,7 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 import { RegisterDto } from '../auth/dto/register.dto';
-import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
+import { UserFilterDto } from './dto/user-filter.dto';
 
 @Controller('user')
 export class UserController {
@@ -16,8 +16,8 @@ export class UserController {
     // @UseGuards(AuthGuard, RolesGuard)
     // @Roles(Role.ADMIN)
     @Get()
-    async getList(@Query() pageDto: PaginationDto) {
-        return this.userService.getList(pageDto);
+    async getList(@Query() dto: UserFilterDto) {
+        return this.userService.getList(dto);
     }
 
     @UseGuards(AuthGuard, RolesGuard)
