@@ -2,6 +2,8 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsLatitude,
+  IsLongitude,
   IsNumber,
   IsOptional,
   IsString,
@@ -53,9 +55,14 @@ export class UpdateProfileDto {
   lookingFor?: string;
 
   @IsOptional()
-  @IsString()
+  @IsLongitude()
   @MaxLength(255)
-  location?: string;
+  longitude?: number;
+
+  @IsOptional()
+  @IsLatitude()
+  @MaxLength(255)
+  latitude?: number;
 
   @IsOptional()
   @IsEnum(RelationshipStatus)

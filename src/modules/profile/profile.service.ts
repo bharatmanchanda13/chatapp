@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateLocationDto } from './dto/update-location';
+import { getDistance } from 'geolib';
 
 @Injectable()
 export class ProfileService {
@@ -44,5 +46,32 @@ export class ProfileService {
             }
         }
         return profile;
+    }
+
+    async updateLocation(dto: UpdateLocationDto, userId: number) {
+        const existing = await this.prisma.profile.findUnique({
+            where: {
+                userId,
+            },
+        });
+
+        if (existing && existing.latitude && existing.longitude) {
+            const distance = getDistance(
+                { latitude: existing.latitude, longitude: existing.longitude },
+                { latitude: dto.latitude, longitude: dto.longitude }
+            );
+
+            if (distance < 500) {
+                return { message: 'Location is too close to the previous one' };
+            }
+        }
+
+        return this.prisma.profile.update({
+            where: { userId },
+            data: {
+                latitude: dto.latitude,
+                longitude: dto.longitude,
+            }
+        });
     }
 }
