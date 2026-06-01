@@ -2,13 +2,21 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 
 import { FriendRequestAction } from './dto/respond-friend-request.dto';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class FriendService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly chatService: ChatService
+    ) {}
     async sendFriendRequest(senderId: number, receiverId: number) {
         if (senderId === receiverId) {
             throw new BadRequestException('Cannot send request to yourself');
+        }
+
+        if (await this.chatService.isBlocked(senderId, receiverId)) {
+            throw new BadRequestException('You are blocked by this user');
         }
 
         const receiver = await this.prisma.user.findUnique({

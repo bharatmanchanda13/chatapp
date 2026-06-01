@@ -1,7 +1,7 @@
-import { Controller, Get, Post, UseGuards, Delete, Put, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Delete, Put, Body, Param, Query, Req } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { UserService } from './user.service';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { BlockUserDto, UpdateUserDto } from './dto/update-user.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
@@ -46,5 +46,28 @@ export class UserController {
     @Put(':id')
     async update(@Param('id') id: number, @Body() dto: UpdateUserDto) {
         return this.userService.update(id, dto);
+    }
+
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.USER)
+    @Post(':blockedId/block')
+    async block(@Param('blockedId') blockedId: number, @Body() dto: BlockUserDto, @Req() req: Request) {
+        const data = {
+            blockerId: req['user'].id,
+            blockedId: blockedId,
+            reason: dto.reason || null,
+        };
+        return this.userService.block(data);
+    }
+
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.USER)
+    @Delete(':unblockedId/unblock')
+    async unblock(@Param('unblockedId') unblockedId: number, @Req() req: Request) {
+        const data = {
+            blockerId: req['user'].id,
+            blockedId: unblockedId,
+        };
+        return this.userService.unblock(data);
     }
 }

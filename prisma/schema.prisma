@@ -40,6 +40,29 @@ enum MessageStatus {
   READ
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum RelationshipStatus {
+  SINGLE
+  IN_A_RELATIONSHIP
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+}
+
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PHONE_VERIFICATION
+  FORGOT_PASSWORD
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   name      String
@@ -47,12 +70,25 @@ model User {
   role      Role     @default(USER)
   phone     String?  @unique
   password  String
+
+  isEmailVerified Boolean  @default(false)
+
+  isPhoneVerified Boolean  @default(false)
+
   isActive  Boolean  @default(true)
+  
   accessTokens String[] @default([])
+  
   refreshTokens String[] @default([])
+
+  profile Profile?
+  
   sentFriendRequests FriendRequest[] @relation("SentFriendRequests")
+  
   receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+
   friendshipsOne Friendship[] @relation("FriendshipsOne")
+
   friendshipsTwo Friendship[] @relation("FriendshipsTwo")
 
   conversations ConversationParticipant[]
@@ -61,12 +97,104 @@ model User {
 
   messageReads MessageRead[]
 
+  blockedUsers UserBlock[] @relation("UserBlocks")
+  
+  blockedBy    UserBlock[] @relation("BlockedByUsers")
+
+  profileViewers ProfileView[] @relation("ProfileViewer")
+
+  profileViewedBy ProfileView[] @relation("ProfileViewed")
+
   createdConversations Conversation[] @relation("ConversationCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model Profile {
+  id Int @id @default(autoincrement())
+
+  userId Int @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  gender Gender?
+
+  dob DateTime?
+
+  weight Float? // kg
+
+  height Float? // cm
+
+  bio String? @db.Text
+
+  lookingFor String?
+
+  location String?
+
+  relationshipStatus RelationshipStatus?
+
+  interests String[] @default([])
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([location])
+}
+
+model UserBlock {
+  id Int @id @default(autoincrement())
+
+  blockerId Int
+  blockedId Int
+
+  reason String?
+
+  blocker User @relation("UserBlocks", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockedByUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model OtpVerification {
+  id         Int      @id @default(autoincrement())
+
+  email      String?
+  phone      String?
+
+  otp        String
+  purpose    OtpPurpose
+
+  expiresAt  DateTime
+  verifiedAt DateTime?
+
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([phone])
+  @@index([expiresAt])
+}
+
+model ProfileView {
+  id         Int      @id @default(autoincrement())
+
+  viewerId   Int
+  profileId  Int
+
+  viewer     User @relation("ProfileViewer", fields: [viewerId], references: [id])
+  profile    User @relation("ProfileViewed", fields: [profileId], references: [id])
+
+  createdAt  DateTime @default(now())
+
+  @@index([profileId])
+  @@index([viewerId])
+}
 
 model FriendRequest {
   id Int @id @default(autoincrement())

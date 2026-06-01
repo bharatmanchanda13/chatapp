@@ -12,11 +12,15 @@ import { ConversationService } from './modules/conversation/conversation.service
 import { ChatGateway } from './modules/chat/gateways/chat.gateway';
 import { CallGateway } from './modules/chat/gateways/call.gateway';
 import { OnlineUserService } from './modules/chat/online-user.service';
+import { ProfileController } from './modules/profile/profile.controller';
+import { ProfileService } from './modules/profile/profile.service';
+import { ScheduleModule } from '@nestjs/schedule';
+import { OtpCleanupService } from './common/cronjob/otp-cleanup.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule],
-  controllers: [AppController, ConversationController],
-  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, OnlineUserService],
+  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ScheduleModule.forRoot(),],
+  controllers: [AppController, ConversationController, ProfileController],
+  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, OnlineUserService, ProfileService, OtpCleanupService],
 })
 export class AppModule { }
 

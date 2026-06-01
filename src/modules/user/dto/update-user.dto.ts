@@ -12,3 +12,8 @@ export class UpdateUserDto {
     @IsPhoneNumber('IN')
     phone: 'string';
 };
+
+export class BlockUserDto {
+    @IsString()
+    reason: 'string';
+}

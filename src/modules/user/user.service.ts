@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthService } from '../auth/auth.service';
@@ -24,6 +24,11 @@ export class UserService {
                 email: true,
                 phone: true,
                 role: true,
+                profile: true,
+            },
+
+            where: {
+                role: 'USER',
             },
 
             orderBy: {
@@ -68,5 +73,64 @@ export class UserService {
 
     async create(data: RegisterDto) {
         return this.authService.register(data);
+    }
+
+    async block(data: {
+        blockerId: number;
+        blockedId: number;
+        reason?: string;
+    }) {
+        if (data.blockerId === data.blockedId) {
+            throw new BadRequestException('You cannot block yourself');
+        }
+
+        const existingBlock = await this.prisma.userBlock.findFirst({
+            where: {
+                OR: [
+                    {
+                        blockerId: data.blockerId,
+                        blockedId: data.blockedId,
+                    },
+                    {
+                        blockerId: data.blockedId,
+                        blockedId: data.blockerId,
+                    },
+                ],
+            },
+        });
+
+        if (existingBlock) {
+            throw new ConflictException('You have already blocked this user');
+        }
+
+        return await this.prisma.userBlock.create({
+            data: {
+                blockerId: data.blockerId,
+                blockedId: data.blockedId,
+                reason: data.reason,
+            },
+        });
+    }
+
+    async unblock(data: {
+        blockerId: number;
+        blockedId: number;
+    }) {
+        const existingBlock = await this.prisma.userBlock.findFirst({
+            where: {
+                blockerId: data.blockerId,
+                blockedId: data.blockedId,
+            },
+        });
+
+        if (!existingBlock) {
+            throw new BadRequestException('This user is not blocked');
+        }
+
+        return this.prisma.userBlock.delete({
+            where: {
+                id: existingBlock.id,
+            },
+        });
     }
 }

@@ -6,6 +6,8 @@ import type { Request } from 'express';
 import { JwtService } from '../jwt/jwt.service';
 import { AuthGuard } from './guards/auth.guard';
 import { LogoutDto } from './dto/logout.dto';
+import { Purpose, SendOtpDto } from './dto/send-otp.dto';
+import { VerifyOtpDto } from './dto/verify.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -36,5 +38,24 @@ export class AuthController {
     async getProfile(@Req() req: Request) {
         const user = req['user'];
         return user;
+    }
+
+    async sendOtp(@Body() dto: SendOtpDto) {
+        return this.authService.sendOtp(dto);
+    }
+
+    async verifyOtp(@Body() dto: VerifyOtpDto) {
+        if (dto.purpose === Purpose.EMAIL_VERIFICATION) {
+            const user = await this.authService.verifyOtp(dto);
+            if (user) {
+                return {
+                    message: 'Email verified successfully',
+                };
+            } else {
+                return {
+                    message: 'Invalid OTP',
+                };
+            }
+        } 
     }
 }

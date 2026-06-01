@@ -9,6 +9,7 @@ import { Server } from 'socket.io';
 import { OnlineUserService } from '../online-user.service';
 import type { SocketUser } from '../interfaces/socket-user.interface';
 import { CALL_EVENTS } from '../events';
+import { ChatService } from '../chat.service';
 
 @WebSocketGateway({
 	cors: {
@@ -21,6 +22,7 @@ export class CallGateway {
 
 	constructor(
 		private readonly onlineUserService: OnlineUserService,
+        private readonly chatService: ChatService
 	) {}
 
 	private getSenderId(client: SocketUser): number | null {
@@ -47,6 +49,13 @@ export class CallGateway {
 	) {
 		const senderId = this.getSenderId(client);
 		if (!senderId) return { success: false, error: 'Caller not identified' };
+
+        if (await this.chatService.isBlocked(senderId, data.to)) {
+            return {
+                success: false,
+                error: 'You cannot call this user',
+            };
+        }
 
 		const targetSocketId = this.onlineUserService.getSocketId(data.to);
 		if (!targetSocketId) {
@@ -97,8 +106,17 @@ export class CallGateway {
 		},
 		@ConnectedSocket() client: SocketUser,
 	) {
-		const senderId = this.getSenderId(client);
+
+        
+        const senderId = this.getSenderId(client);
 		if (!senderId) return { success: false, error: 'Sender not identified' };
+        
+        if (await this.chatService.isBlocked(senderId, data.to)) {
+            return {
+                success: false,
+                error: 'Call is blocked',
+            };
+        }
 
 		const targetSocketId = this.onlineUserService.getSocketId(data.to);
 		if (!targetSocketId) {

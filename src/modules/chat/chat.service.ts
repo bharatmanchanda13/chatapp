@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { MessageType, SendMessageDto } from './dto/send-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -22,6 +22,24 @@ export class ChatService {
 
         if (!participant) {
             throw new ForbiddenException('You are not part of this conversation');
+        }
+
+        const participants = await this.prisma.conversationParticipant.findMany({
+            where: {
+                conversationId: dto.conversationId,
+            },
+            select: {
+                userId: true,
+            },
+        });
+        const otherUser = participants.find((p) => p.userId !== dto.senderId);
+
+        if (!otherUser) {
+            throw new ForbiddenException('Conversation participant not found');
+        }
+
+        if (await this.isBlocked(dto.senderId, otherUser.userId)) {
+            throw new ForbiddenException('Messaging is not allowed because one user has blocked the other');
         }
 
         const message = await this.prisma.message.create({
@@ -190,5 +208,24 @@ export class ChatService {
                 userId: true,
             },
         });
+    }
+
+    async isBlocked(userA: number, userB: number) {
+        const block = await this.prisma.userBlock.findFirst({
+            where: {
+                OR: [
+                    {
+                        blockerId: userA,
+                        blockedId: userB,
+                    },
+                    {
+                        blockerId: userB,
+                        blockedId: userA,
+                    },
+                ],
+            },
+        });
+
+        return !!block;
     }
 }

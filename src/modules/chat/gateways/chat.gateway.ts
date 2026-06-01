@@ -16,6 +16,7 @@ import { SendMessageDto } from '../dto/send-message.dto';
 import { UpdateMessageDto } from '../dto/update-message.dto';
 import type { SocketUser } from '../interfaces/socket-user.interface';
 import { JoinUserDto } from '../dto/join-user.dto';
+import { ForbiddenException } from '@nestjs/common';
 
 @WebSocketGateway({
 	cors: {
@@ -166,14 +167,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	}
 
 	@SubscribeMessage(CHAT_EVENTS.TYPING)
-	async typing(
-		@MessageBody()
-		data: {
-			conversationId: number;
-
-			userId: number;
-		},
-	) {
+	async typing(@MessageBody() data: {
+        conversationId: number;
+        userId: number;
+    }) {
+        if (await this.chatService.isBlocked(data.userId, data.conversationId)) {
+            throw new ForbiddenException('You are blocked from this conversation');
+        }
 		this.server
 			.to(`conversation:${data.conversationId}`)
 			.emit(CHAT_EVENTS.TYPING, data);

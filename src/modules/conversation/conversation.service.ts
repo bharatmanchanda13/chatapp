@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class ConversationService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly chatService: ChatService
+    ) {}
     async getList(userId: number) {
         const conversations = await this.prisma.conversation.findMany({
             where: {
@@ -43,7 +47,9 @@ export class ConversationService {
     }
 
     async findOrCreateDirectConversation(userId: number, participantId: number) {
-        // 1. Find if a DIRECT conversation with both participants already exists
+        if (await this.chatService.isBlocked(userId, participantId)) {
+            throw new BadRequestException('You are blocked by this user');
+        }
         const existingConversation = await this.prisma.conversation.findFirst({
             where: {
                 type: 'DIRECT',
