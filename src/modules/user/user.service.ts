@@ -6,6 +6,7 @@ import { RegisterDto } from '../auth/dto/register.dto';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { UserFilterDto } from './dto/user-filter.dto';
 import { UserFilterBuilder } from './user-filter.builder';
+import { RegisterDeviceDto } from './dto/register-device.dto';
 
 @Injectable()
 export class UserService {
@@ -154,6 +155,26 @@ export class UserService {
         return this.prisma.userBlock.delete({
             where: {
                 id: existingBlock.id,
+            },
+        });
+    }
+
+    async registerDevice(dto: RegisterDeviceDto & {
+        userId: number;
+    }) {
+        return this.prisma.deviceToken.upsert({
+            where: {
+                fcmToken: dto.fcmToken,
+            },
+            update: {
+                isActive: true,
+                deviceId: dto.deviceId,
+            },
+            create: {
+                userId: dto.userId,
+                fcmToken: dto.fcmToken,
+                deviceId: dto.deviceId,
+                platform: dto.platform,
             },
         });
     }

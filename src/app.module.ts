@@ -16,9 +16,10 @@ import { ProfileController } from './modules/profile/profile.controller';
 import { ProfileService } from './modules/profile/profile.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { OtpCleanupService } from './common/cronjob/otp-cleanup.service';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(),],
+  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule,],
   controllers: [AppController, ConversationController, ProfileController],
   providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService],
 })

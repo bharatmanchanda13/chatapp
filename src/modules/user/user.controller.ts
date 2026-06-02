@@ -7,6 +7,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../auth/enums/role.enum';
 import { RegisterDto } from '../auth/dto/register.dto';
 import { UserFilterDto } from './dto/user-filter.dto';
+import { RegisterDeviceDto } from './dto/register-device.dto';
 
 @Controller('user')
 export class UserController {
@@ -69,5 +70,15 @@ export class UserController {
             blockedId: unblockedId,
         };
         return this.userService.unblock(data);
+    }
+
+
+    @UseGuards(AuthGuard)
+    @Post('fcm-token')
+    async storeFcmToken(@Req() req: Request, @Body() dto: RegisterDeviceDto) {
+        return this.userService.registerDevice({    
+            userId: req['user'].id,
+            ...dto,
+        });
     }
 }

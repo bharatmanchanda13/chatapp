@@ -63,13 +63,34 @@ enum OtpPurpose {
   FORGOT_PASSWORD
 }
 
+enum Platform {
+  ANDROID
+  IOS
+  WEB
+}
+
+enum NotificationType {
+  NEW_MATCH
+  NEW_MESSAGE
+  PROFILE_LIKE
+  FRIEND_REQUEST
+  CALL_MISSED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
+
   name      String
+
   email     String?  @unique
+
   role      Role     @default(USER)
+
   phone     String?  @unique
+
   password  String
+
+  deviceTokens DeviceToken[]
 
   isEmailVerified Boolean  @default(false)
 
@@ -107,8 +128,30 @@ model User {
 
   createdConversations Conversation[] @relation("ConversationCreator")
 
+  notifications Notification[]
+
   createdAt DateTime @default(now())
+
   updatedAt DateTime @updatedAt
+}
+
+model DeviceToken {
+    id            String   @id @default(uuid())
+
+    userId        Int
+    user          User     @relation(fields: [userId], references: [id])
+
+    fcmToken      String   @unique
+
+    deviceId      String?
+    platform      Platform
+
+    isActive      Boolean  @default(true)
+
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    @@index([userId])
 }
 
 model Profile {
@@ -324,6 +367,26 @@ model MessageRead {
   @@unique([messageId, userId])
 
   @@index([messageId])
+
+  @@index([userId])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+
+  title      String
+  body       String
+
+  type       NotificationType
+
+  isRead     Boolean @default(false)
+
+  metadata   Json?
+
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }
