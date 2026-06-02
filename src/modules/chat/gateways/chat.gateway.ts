@@ -8,7 +8,7 @@ import {
 	WebSocketServer,
 } from '@nestjs/websockets';
 
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { ChatService } from '../chat.service';
 import { OnlineUserService } from '../online-user.service';
 import { CHAT_EVENTS } from '../events';
@@ -32,35 +32,59 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 		private readonly onlineUserService: OnlineUserService,
 	) {}
 
-	handleConnection(client: SocketUser) {
-		console.log('User Connected:', client.id);
-	}
+	handleConnection(client: Socket) {
+        const userId = Number(
+            client.handshake.query.userId,
+        );
 
-	handleDisconnect(client: SocketUser) {
-		this.onlineUserService.removeUser(client.id);
+        if (!userId) {
+            client.disconnect();
+            return;
+        }
 
-		this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
+        this.onlineUserService.addUser(
+            userId,
+            client.id,
+        );
+
+        client.join(`user:${userId}`);
+
+        this.server.emit(
+            CHAT_EVENTS.ONLINE_USERS,
+            this.onlineUserService.getOnlineUsers(),
+        );
+    }
+
+	// handleDisconnect(client: SocketUser) {
+	// 	this.onlineUserService.removeUser(client.id);
+
+	// 	this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
         
-		console.log('User Disconnected:', client.id);
-	}
+	// 	console.log('User Disconnected:', client.id);
+	// }
+
+    handleDisconnect(client: Socket) {
+        this.onlineUserService.removeUser(
+            client.id,
+        );
+
+        this.server.emit(
+            CHAT_EVENTS.ONLINE_USERS,
+            this.onlineUserService.getOnlineUsers(),
+        );
+    }
 
 	@SubscribeMessage(CHAT_EVENTS.JOIN)
-	async joinChat(
+    async joinChat(
         @MessageBody() dto: JoinUserDto,
-	    @ConnectedSocket() client: SocketUser
+        @ConnectedSocket() client: SocketUser,
     ) {
-		const room = `user:${dto.id}`;
+        client.join(`user:${dto.id}`);
 
-		client.join(room);
-
-		this.onlineUserService.addUser(dto.id, client.id);
-
-		this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
-
-		return {
-			success: true,
-		};
-	}
+        return {
+            success: true,
+        };
+    }
 
 	@SubscribeMessage(CHAT_EVENTS.SEND_MESSAGE)
 	async sendMessage(
@@ -101,11 +125,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	}
 
 	@SubscribeMessage(CHAT_EVENTS.DELETE_MESSAGE)
-	async deleteMessage(
-		@MessageBody()
-		data: {
+	async deleteMessage(@MessageBody() data: {
 			messageId: number;
-
 			userId: number;
 		},
 	) {
@@ -114,25 +135,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 			data.userId,
 		);
 
-		this.server.emit(
-			CHAT_EVENTS.MESSAGE_DELETED,
-
-			{
-				messageId: data.messageId,
-			},
-		);
+		this.server.emit(CHAT_EVENTS.MESSAGE_DELETED, {
+            messageId: data.messageId,
+        });
 
 		return deleted;
 	}
 
 	@SubscribeMessage(CHAT_EVENTS.MARK_READ)
-	async markAsRead(
-		@MessageBody()
-		data: {
-			messageId: number;
-			userId: number;
-		},
-	) {
+	async markAsRead(@MessageBody() data: {
+        messageId: number;
+        userId: number;
+    }) {
 		const read = await this.chatService.markAsRead(data.messageId, data.userId);
 
 		if (read && read.conversationId) {
@@ -150,17 +164,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	}
 
 	@SubscribeMessage('join-conversation')
-	async joinConversation(
-		@MessageBody()
-		data: {
-			conversationId: number;
-		},
-
-		@ConnectedSocket()
-		client: SocketUser,
+	async joinConversation(@MessageBody() data: {
+            conversationId: number;
+        },
+		@ConnectedSocket() client: SocketUser,
 	) {
 		client.join(`conversation:${data.conversationId}`);
-
 		return {
 			success: true,
 		};
