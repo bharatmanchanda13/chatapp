@@ -21,13 +21,13 @@ import { MediaController } from './modules/media/media.controller';
 import { MediaService } from './modules/media/media.service';
 import { S3Service } from './modules/media/s3.service';
 import { AlbumModule } from './modules/album/album.module';
+import { EmailService } from './modules/email/email.service';
+import { EmailModule } from './modules/email/email.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule, AlbumModule],
-  controllers: [AppController, ConversationController, ProfileController, MediaController],
-  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service],
+    imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule, AlbumModule, EmailModule, ConfigModule.forRoot({isGlobal: true})],
+    controllers: [AppController, ConversationController, ProfileController, MediaController],
+    providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service, EmailService],
 })
 export class AppModule { }
-
-
-

@@ -8,6 +8,9 @@ import { AuthGuard } from './guards/auth.guard';
 import { LogoutDto } from './dto/logout.dto';
 import { Purpose, SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify.dto';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
+import { Role } from './enums/role.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -20,6 +23,8 @@ export class AuthController {
         return this.authService.login(dto);
     }
 
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
     @Post('register')
     async register(@Body() dto: RegisterDto) {
         return this.authService.register(dto);
@@ -40,16 +45,19 @@ export class AuthController {
         return user;
     }
 
+    @Post('send-otp')
     async sendOtp(@Body() dto: SendOtpDto) {
         return this.authService.sendOtp(dto);
     }
 
+    @Post('verify-otp')
     async verifyOtp(@Body() dto: VerifyOtpDto) {
         if (dto.purpose === Purpose.EMAIL_VERIFICATION) {
-            const user = await this.authService.verifyOtp(dto);
-            if (user) {
+            const result = await this.authService.verifyOtp(dto) as any;
+            if (result) {
                 return {
                     message: 'Email verified successfully',
+                    ...result,
                 };
             } else {
                 return {

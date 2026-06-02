@@ -3,9 +3,10 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtModule } from '../jwt/jwt.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [PrismaModule, JwtModule],
+  imports: [PrismaModule, JwtModule, EmailModule],
   controllers: [AuthController],
   providers: [AuthService],
   exports: [AuthService],

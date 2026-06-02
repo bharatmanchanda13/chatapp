@@ -6,10 +6,17 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '../jwt/jwt.service';
 import { Purpose, SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify.dto';
+import { EmailService } from '../email/email.service';
+import { signupOtpTemplate } from '../email/templates/signup-otp.template';
+import { forgotPasswordOtpTemplate } from '../email/templates/forgot-password-otp.template';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly prisma: PrismaService, private readonly jwtService: JwtService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly jwtService: JwtService,
+        private readonly emailService: EmailService,
+    ) { }
 
     private generateOtp(): string {
         return Math.floor(100000 + Math.random() * 900000).toString();
@@ -90,6 +97,13 @@ export class AuthService {
                 profile: true,
             },
         });
+
+        // Send email verification OTP using sendOtp
+        await this.sendOtp({
+            email: dto.email,
+            purpose: Purpose.EMAIL_VERIFICATION,
+        });
+
         const { password: _, accessTokens, refreshTokens, ...safeUser } = user;
         return {
             ...safeUser,
@@ -142,6 +156,27 @@ export class AuthService {
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000),
             },
         });
+
+        // Send Email based on purpose
+        let subject = '';
+        let bodyHtml = ``;
+
+        if (purpose === Purpose.EMAIL_VERIFICATION) {
+            const template = signupOtpTemplate(otp, 10);
+            subject = template.subject;
+            bodyHtml = template.html;
+        } else if (purpose === Purpose.FORGOT_PASSWORD) {
+            const template = forgotPasswordOtpTemplate(otp, 10);
+            subject = template.subject;
+            bodyHtml = template.html;
+        }
+
+        try {
+            await this.emailService.sendEmail(email, subject, bodyHtml);
+        } catch (error) {
+            console.error('Failed to send OTP email:', error);
+            throw new BadRequestException('Failed to send OTP email');
+        }
     }
 
     async verifyOtp(dto: VerifyOtpDto) {
