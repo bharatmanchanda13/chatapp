@@ -6,9 +6,10 @@ import { JwtModule } from '../jwt/jwt.module';
 import { AuthModule } from '../auth/auth.module';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { UserFilterBuilder } from './user-filter.builder';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
-  imports: [PrismaModule, JwtModule, AuthModule],
+  imports: [PrismaModule, JwtModule, AuthModule, ChatModule],
   controllers: [UserController],
   providers: [UserService, PaginationService, UserFilterBuilder]
 })

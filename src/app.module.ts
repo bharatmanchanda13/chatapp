@@ -11,17 +11,18 @@ import { ConversationController } from './modules/conversation/conversation.cont
 import { ConversationService } from './modules/conversation/conversation.service';
 import { ChatGateway } from './modules/chat/gateways/chat.gateway';
 import { CallGateway } from './modules/chat/gateways/call.gateway';
-import { OnlineUserService } from './modules/chat/online-user.service';
+import { ChatModule } from './modules/chat/chat.module';
 import { ProfileController } from './modules/profile/profile.controller';
 import { ProfileService } from './modules/profile/profile.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { OtpCleanupService } from './common/cronjob/otp-cleanup.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ScheduleModule.forRoot(),],
+  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(),],
   controllers: [AppController, ConversationController, ProfileController],
-  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, OnlineUserService, ProfileService, OtpCleanupService],
+  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService],
 })
 export class AppModule { }
+
 
 

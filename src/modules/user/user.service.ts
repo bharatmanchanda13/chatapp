@@ -15,7 +15,27 @@ export class UserService {
         private readonly paginationService: PaginationService,
         private readonly userFilterBuilder: UserFilterBuilder,
     ) {}
-    async getList(dto: UserFilterDto) {
+    async getList(dto: UserFilterDto, currentUserId?: number) {
+        let friendIds: number[] = [];
+
+        if (dto.isFriend !== undefined && currentUserId) {
+            const friendships = await this.prisma.friendship.findMany({
+                where: {
+                    OR: [
+                        { userOneId: currentUserId },
+                        { userTwoId: currentUserId },
+                    ],
+                },
+                select: {
+                    userOneId: true,
+                    userTwoId: true,
+                },
+            });
+
+            friendIds = friendships.map((f) =>
+                f.userOneId === currentUserId ? f.userTwoId : f.userOneId,
+            );
+        }
 
         return this.paginationService.paginate(this.prisma.user, {
             page: dto.page,
@@ -30,7 +50,10 @@ export class UserService {
                 profile: true,
             },
 
-            where: this.userFilterBuilder.build(dto),
+            where: this.userFilterBuilder.build(dto, {
+                friendIds,
+                currentUserId,
+            }),
 
             orderBy: {
                 id: 'desc',
