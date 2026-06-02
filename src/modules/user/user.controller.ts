@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards, Delete, Put, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Delete, Put, Body, Param, Query, Req, ParseIntPipe } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { UserService } from './user.service';
 import { BlockUserDto, UpdateUserDto } from './dto/update-user.dto';
@@ -31,28 +31,28 @@ export class UserController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @Get(':id')
-    async getOne(@Param('id') id: number) {
+    async getOne(@Param('id', ParseIntPipe) id: number) {
         return this.userService.getOne(id);
     }
 
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @Delete(':id')
-    async delete(@Param('id') id: number) {
+    async delete(@Param('id', ParseIntPipe) id: number) {
         return this.userService.delete(id);
     }
 
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @Put(':id')
-    async update(@Param('id') id: number, @Body() dto: UpdateUserDto) {
+    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
         return this.userService.update(id, dto);
     }
 
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.USER)
     @Post(':blockedId/block')
-    async block(@Param('blockedId') blockedId: number, @Body() dto: BlockUserDto, @Req() req: Request) {
+    async block(@Param('blockedId', ParseIntPipe) blockedId: number, @Body() dto: BlockUserDto, @Req() req: Request) {
         const data = {
             blockerId: req['user'].id,
             blockedId: blockedId,
@@ -64,7 +64,7 @@ export class UserController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.USER)
     @Delete(':unblockedId/unblock')
-    async unblock(@Param('unblockedId') unblockedId: number, @Req() req: Request) {
+    async unblock(@Param('unblockedId', ParseIntPipe) unblockedId: number, @Req() req: Request) {
         const data = {
             blockerId: req['user'].id,
             blockedId: unblockedId,

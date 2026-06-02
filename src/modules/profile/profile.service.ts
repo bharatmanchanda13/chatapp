@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateLocationDto } from './dto/update-location';
@@ -30,7 +30,7 @@ export class ProfileService {
         });
 
         if (!profile) {
-            return { message: 'Profile not found' };
+            throw new NotFoundException('Profile not found');
         } else {
             const isAlreadyViewed = await this.prisma.profileView.findFirst({
                 where: {

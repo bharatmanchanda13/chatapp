@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { FriendService } from './friend.service';
 import { SendFriendRequestDto } from './dto/send-friend-request.dto';
 import { RespondFriendRequestDto } from './dto/respond-friend-request.dto';
@@ -17,7 +17,7 @@ export class FriendController {
 
     @UseGuards(AuthGuard)
     @Put('request/:id')
-    async respondFriendRequest(@Param('id') requestId: number, @Body() dto: RespondFriendRequestDto, @Req() req: Request) {
+    async respondFriendRequest(@Param('id', ParseIntPipe) requestId: number, @Body() dto: RespondFriendRequestDto, @Req() req: Request) {
         const userId = req['user'].id;
         return this.friendService.updateFriendRequest(requestId, userId, dto.action);
     }
@@ -38,14 +38,14 @@ export class FriendController {
 
     @UseGuards(AuthGuard)
     @Get(':id')
-    async getFriendDetails(@Param('id') friendId: number, @Req() req: Request) {
+    async getFriendDetails(@Param('id', ParseIntPipe) friendId: number, @Req() req: Request) {
         const userId = req['user'].id;
         return this.friendService.getFriendDetails(userId, friendId);
     }
 
     @UseGuards(AuthGuard)
     @Delete(':friendId')
-    async unfriend(@Req() req: Request, @Param('friendId') friendId: number ) {
+    async unfriend(@Req() req: Request, @Param('friendId', ParseIntPipe) friendId: number ) {
         return this.friendService.unfriend(req['user'].id, friendId);
     }
 }
