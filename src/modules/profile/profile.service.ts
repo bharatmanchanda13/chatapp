@@ -5,6 +5,8 @@ import { UpdateLocationDto } from './dto/update-location';
 import { getDistance } from 'geolib';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/create-notification.enum';
+import { CreateMediaDto } from '../album/dto/create-media.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 
 @Injectable()
 export class ProfileService {
@@ -95,6 +97,78 @@ export class ProfileService {
                 latitude: dto.latitude,
                 longitude: dto.longitude,
             }
+        });
+    }
+
+    async addMedia(userId: number, dto: CreateMediaDto) {
+        let profile = await this.prisma.profile.findUnique({
+            where: { userId },
+        });
+
+        if (!profile) {
+            profile = await this.prisma.profile.create({
+                data: { userId },
+            });
+        }
+
+        return this.prisma.media.create({
+            data: {
+                userId,
+                ownerType: 'PROFILE',
+                ownerId: profile.id,
+                type: dto.type,
+                url: dto.url,
+                storageKey: dto.storageKey,
+            },
+        });
+    }
+
+    async updateMedia(userId: number, mediaId: number, dto: UpdateMediaDto) {
+        const profile = await this.prisma.profile.findUnique({
+            where: { userId },
+        });
+
+        if (!profile) {
+            throw new NotFoundException('Profile not found');
+        }
+
+        const media = await this.prisma.media.findUnique({
+            where: { id: mediaId },
+        });
+
+        if (!media || media.ownerType !== 'PROFILE' || media.ownerId !== profile.id) {
+            throw new NotFoundException('Media not found on this profile');
+        }
+
+        return this.prisma.media.update({
+            where: { id: mediaId },
+            data: {
+                type: dto.type,
+                url: dto.url,
+                storageKey: dto.storageKey,
+            },
+        });
+    }
+
+    async deleteMedia(userId: number, mediaId: number) {
+        const profile = await this.prisma.profile.findUnique({
+            where: { userId },
+        });
+
+        if (!profile) {
+            throw new NotFoundException('Profile not found');
+        }
+
+        const media = await this.prisma.media.findUnique({
+            where: { id: mediaId },
+        });
+
+        if (!media || media.ownerType !== 'PROFILE' || media.ownerId !== profile.id) {
+            throw new NotFoundException('Media not found on this profile');
+        }
+
+        return this.prisma.media.delete({
+            where: { id: mediaId },
         });
     }
 }

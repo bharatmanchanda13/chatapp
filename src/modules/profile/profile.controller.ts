@@ -3,6 +3,8 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileService } from './profile.service';
 import { UpdateLocationDto } from './dto/update-location';
+import { CreateMediaDto } from '../album/dto/create-media.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 
 @Controller('profile')
 export class ProfileController {
@@ -26,5 +28,33 @@ export class ProfileController {
     async updateLocation(@Body() dto: UpdateLocationDto, @Req() req: Request) {
         const userId = req['user'].id;
         return this.profileService.updateLocation(dto, userId);
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('media')
+    async addMedia(@Body() dto: CreateMediaDto, @Req() req: Request) {
+        const userId = req['user'].id;
+        return this.profileService.addMedia(userId, dto);
+    }
+
+    @UseGuards(AuthGuard)
+    @Put(':mediaId/media')
+    async updateMedia(
+        @Param('mediaId', ParseIntPipe) mediaId: number,
+        @Body() dto: UpdateMediaDto,
+        @Req() req: Request,
+    ) {
+        const userId = req['user'].id;
+        return this.profileService.updateMedia(userId, mediaId, dto);
+    }
+
+    @UseGuards(AuthGuard)
+    @Delete(':mediaId/media')
+    async deleteMedia(
+        @Param('mediaId', ParseIntPipe) mediaId: number,
+        @Req() req: Request,
+    ) {
+        const userId = req['user'].id;
+        return this.profileService.deleteMedia(userId, mediaId);
     }
 }

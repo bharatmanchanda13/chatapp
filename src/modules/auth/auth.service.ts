@@ -17,10 +17,13 @@ export class AuthService {
     async login(dto: LoginDto): Promise<any> {
         const existingUser = await this.prisma.user.findFirst({
             where: {
-            OR: [
-                { email: dto.username },
-                { phone: dto.username },
-            ],
+                OR: [
+                    { email: dto.username },
+                    { phone: dto.username },
+                ],
+            },
+            include: {
+                profile: true,
             },
         });
         if (!existingUser) {
@@ -37,9 +40,23 @@ export class AuthService {
         }
 
         const { password, accessTokens, refreshTokens, ...safeUser } = existingUser;
+
+        let profileMedia: any[] = [];
+        if (existingUser.profile) {
+            profileMedia = await this.prisma.media.findMany({
+                where: {
+                    ownerType: 'PROFILE',
+                    ownerId: existingUser.profile.id,
+                },
+            });
+        }
+
         const { accessToken, refreshToken } = await this.jwtService.generateTokens(safeUser);
         return {
-            user: safeUser,
+            user: {
+                ...safeUser,
+                profileMedia,
+            },
             accessToken,
             refreshToken
         };
@@ -65,9 +82,19 @@ export class AuthService {
                 email: dto.email,
                 phone: dto.phone,
                 password: hashedPassword,
+                profile: {
+                    create: {},
+                },
+            },
+            include: {
+                profile: true,
             },
         });
-        return user;
+        const { password: _, accessTokens, refreshTokens, ...safeUser } = user;
+        return {
+            ...safeUser,
+            profileMedia: [],
+        };
     }
 
     async logout(userId: number, accessToken: string, refreshToken: string) {
@@ -144,12 +171,21 @@ export class AuthService {
                     email,
                     password: await bcrypt.hash(password, 10),
                     isEmailVerified: true,
+                    profile: {
+                        create: {},
+                    },
+                },
+                include: {
+                    profile: true,
                 },
             });
             const { password: hashedPassword, accessTokens, refreshTokens, ...safeUser } = user;
             const { accessToken, refreshToken } = await this.jwtService.generateTokens(safeUser);
             return {
-                user,
+                user: {
+                    ...safeUser,
+                    profileMedia: [],
+                },
                 accessToken,
                 refreshToken
             };
