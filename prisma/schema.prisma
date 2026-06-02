@@ -79,6 +79,17 @@ enum NotificationType {
   OTHER
 }
 
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+enum MediaOwnerType {
+  PROFILE
+  MESSAGE
+}
+
 model User {
   id        Int      @id @default(autoincrement())
 
@@ -119,6 +130,8 @@ model User {
   messages Message[]
 
   messageReads MessageRead[]
+
+  media Media[]
 
   blockedUsers UserBlock[] @relation("UserBlocks")
   
@@ -332,7 +345,7 @@ model Message {
 
   senderId Int
 
-  content String
+  content String?
 
   type MessageType @default(TEXT)
 
@@ -391,4 +404,23 @@ model Notification {
   createdAt  DateTime @default(now())
 
   @@index([userId])
+}
+
+model Media {
+  id          Int            @id @default(autoincrement())
+
+  userId Int
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ownerType   MediaOwnerType
+  ownerId     Int
+
+  type        MediaType
+
+  storageKey  String
+  url         String
+
+  createdAt   DateTime @default(now())
+
+  @@index([ownerType, ownerId])
 }

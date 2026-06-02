@@ -17,11 +17,14 @@ import { ProfileService } from './modules/profile/profile.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { OtpCleanupService } from './common/cronjob/otp-cleanup.service';
 import { NotificationModule } from './modules/notification/notification.module';
+import { MediaController } from './modules/media/media.controller';
+import { MediaService } from './modules/media/media.service';
+import { S3Service } from './modules/media/s3.service';
 
 @Module({
   imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule,],
-  controllers: [AppController, ConversationController, ProfileController],
-  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService],
+  controllers: [AppController, ConversationController, ProfileController, MediaController],
+  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service],
 })
 export class AppModule { }
 
