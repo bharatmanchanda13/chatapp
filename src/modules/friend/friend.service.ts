@@ -3,12 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 
 import { FriendRequestAction } from './dto/respond-friend-request.dto';
 import { ChatService } from '../chat/chat.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/create-notification.enum';
 
 @Injectable()
 export class FriendService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly chatService: ChatService
+        private readonly chatService: ChatService,
+        private readonly notificationService: NotificationService,
     ) {}
     async sendFriendRequest(senderId: number, receiverId: number) {
         if (senderId === receiverId) {
@@ -47,18 +50,39 @@ export class FriendService {
             throw new BadRequestException('Friend request already exists');
         }
 
-        return await this.prisma.friendRequest.create({
+        const friendRequest = await this.prisma.friendRequest.create({
             data: {
                 senderId,
                 receiverId
             }
         });
+
+        // Send friend request notification
+        try {
+            const sender = await this.prisma.user.findUnique({
+                where: { id: senderId },
+                select: { name: true },
+            });
+            this.notificationService.sendAndSave(
+                receiverId,
+                'New Friend Request',
+                `${sender?.name || 'Someone'} sent you a friend request.`,
+                NotificationType.FRIEND_REQUEST,
+                {
+                    senderId: String(senderId),
+                }
+            ).catch(err => console.error('Failed to send friend request notification:', err));
+        } catch (error) {
+            console.error('Failed to fetch sender or trigger friend request notification:', error);
+        }
+
+        return friendRequest;
     }
 
 
     // Accept / Decline Request
     async updateFriendRequest(requestId: number, userId: number, status: FriendRequestAction) {
-        return await this.prisma.$transaction(
+        const result = await this.prisma.$transaction(
             async (tx) => {
 
                 const request = await tx.friendRequest.findUnique({
@@ -108,7 +132,7 @@ export class FriendService {
                             },
                         });
                     }
-                    return updatedRequest;
+                    return { updatedRequest, senderId: request.senderId, receiverId: request.receiverId };
                 }
 
                 if (status === FriendRequestAction.CANCELLED) {
@@ -128,6 +152,32 @@ export class FriendService {
                 throw new BadRequestException('Invalid action');
             },
         );
+
+        if (status === FriendRequestAction.ACCEPTED && result && 'updatedRequest' in result) {
+            const res = result as { updatedRequest: any; senderId: number; receiverId: number };
+            try {
+                const receiver = await this.prisma.user.findUnique({
+                    where: { id: res.receiverId },
+                    select: { name: true },
+                });
+                this.notificationService.sendAndSave(
+                    res.senderId,
+                    'Friend Request Accepted',
+                    `${receiver?.name || 'Someone'} accepted your friend request.`,
+                    NotificationType.FRIEND_REQUEST,
+                    {
+                        receiverId: String(res.receiverId),
+                        requestId: String(requestId),
+                        accepted: 'true',
+                    }
+                ).catch(err => console.error('Failed to send friend request accepted notification:', err));
+            } catch (error) {
+                console.error('Failed to send notification for friend request acceptance:', error);
+            }
+            return res.updatedRequest;
+        }
+
+        return result;
     }
 
     async getFriendRequests(userId: number) {

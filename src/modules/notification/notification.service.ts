@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from './firebase.service';
+import { NotificationType } from './create-notification.enum';
 
 @Injectable()
 export class NotificationService {
@@ -30,5 +31,32 @@ export class NotificationService {
             body,
             data,
         );
+    }
+
+    async sendAndSave(
+        userId: number,
+        title: string,
+        body: string,
+        type: NotificationType,
+        metadata?: any,
+    ) {
+        await this.prisma.notification.create({
+            data: {
+                userId,
+                title,
+                body,
+                type,
+                metadata,
+            },
+        });
+
+        const fcmData: Record<string, string> = {};
+        if (metadata) {
+            for (const key of Object.keys(metadata)) {
+                fcmData[key] = String(metadata[key]);
+            }
+        }
+
+        return this.sendToUser(userId, title, body, fcmData);
     }
 }

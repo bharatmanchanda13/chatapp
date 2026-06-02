@@ -3,11 +3,14 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateLocationDto } from './dto/update-location';
 import { getDistance } from 'geolib';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/create-notification.enum';
 
 @Injectable()
 export class ProfileService {
     constructor(
         private readonly prisma: PrismaService,
+        private readonly notificationService: NotificationService,
     ) {}
     async update(dto: UpdateProfileDto, userId: number) {
         return this.prisma.profile.update({
@@ -26,8 +29,8 @@ export class ProfileService {
             },
         });
 
-        if (!profile || profile.userId !== authUserId) {
-            return { message: 'Profile not found or access denied' };
+        if (!profile) {
+            return { message: 'Profile not found' };
         } else {
             const isAlreadyViewed = await this.prisma.profileView.findFirst({
                 where: {
@@ -43,6 +46,26 @@ export class ProfileService {
                         profileId: userId,
                     },
                 });
+
+                if (authUserId !== userId) {
+                    try {
+                        const viewer = await this.prisma.user.findUnique({
+                            where: { id: authUserId },
+                            select: { name: true },
+                        });
+                        this.notificationService.sendAndSave(
+                            userId,
+                            'Profile Viewed',
+                            `${viewer?.name || 'Someone'} viewed your profile.`,
+                            NotificationType.PROFILE_VIEW,
+                            {
+                                viewerId: String(authUserId),
+                            }
+                        ).catch(err => console.error('Failed to send profile viewed notification:', err));
+                    } catch (error) {
+                        console.error('Failed to send notification for profile view:', error);
+                    }
+                }
             }
         }
         return profile;

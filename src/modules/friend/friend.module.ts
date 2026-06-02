@@ -4,10 +4,11 @@ import { FriendController } from './friend.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtModule } from '../jwt/jwt.module';
 import { ChatService } from '../chat/chat.service';
+import { NotificationModule } from '../notification/notification.module';
 
 
 @Module({
-  imports: [PrismaModule, JwtModule],
+  imports: [PrismaModule, JwtModule, NotificationModule],
   controllers: [FriendController],
   providers: [FriendService, ChatService],
 })

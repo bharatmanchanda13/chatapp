@@ -2,6 +2,8 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { MessageType, SendMessageDto } from './dto/send-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType } from '../notification/create-notification.enum';
 
 export enum MessageStatus {
     SENT = 'SENT',
@@ -10,7 +12,10 @@ export enum MessageStatus {
 }
 @Injectable()
 export class ChatService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationService: NotificationService,
+    ) {}
 
     async sendMessage(dto: SendMessageDto) {
         const participant = await this.prisma.conversationParticipant.findFirst({
@@ -61,6 +66,16 @@ export class ChatService {
                 },
             },
         });
+
+        this.notificationService.sendAndSave(otherUser.userId, `New message from ${message.sender.name}`,
+            dto.content,
+            NotificationType.NEW_MESSAGE,
+            {
+                conversationId: String(dto.conversationId),
+                messageId: String(message.id),
+                senderId: String(dto.senderId),
+            }
+        ).catch((err) => console.error('Failed to send new message notification:', err));
 
         return message;
     }

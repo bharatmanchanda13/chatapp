@@ -72,6 +72,14 @@ export class AuthService {
 
     async logout(userId: number, accessToken: string, refreshToken: string) {
         await this.jwtService.revokeTokens(userId, accessToken, refreshToken); // Revoke the user's tokens.
+        await this.prisma.deviceToken.updateMany({
+            where: {
+                userId,
+            },
+            data: {
+                isActive: false,
+            },
+        });
     }
 
     async sendOtp(dto: SendOtpDto) {

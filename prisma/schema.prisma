@@ -73,8 +73,10 @@ enum NotificationType {
   NEW_MATCH
   NEW_MESSAGE
   PROFILE_LIKE
+  PROFILE_VIEW
   FRIEND_REQUEST
   CALL_MISSED
+  OTHER
 }
 
 model User {
