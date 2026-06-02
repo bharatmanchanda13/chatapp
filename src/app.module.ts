@@ -20,13 +20,12 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { MediaController } from './modules/media/media.controller';
 import { MediaService } from './modules/media/media.service';
 import { S3Service } from './modules/media/s3.service';
-import { AlbumService } from './modules/album/album.service';
-import { AlbumController } from './modules/album/album.controller';
+import { AlbumModule } from './modules/album/album.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule,],
-  controllers: [AppController, ConversationController, ProfileController, MediaController, AlbumController],
-  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service, AlbumService],
+  imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule, AlbumModule],
+  controllers: [AppController, ConversationController, ProfileController, MediaController],
+  providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service],
 })
 export class AppModule { }
 
