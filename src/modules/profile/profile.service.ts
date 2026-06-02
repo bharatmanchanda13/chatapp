@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateLocationDto } from './dto/update-location';
@@ -87,7 +87,7 @@ export class ProfileService {
             );
 
             if (distance < 500) {
-                return { message: 'Location is too close to the previous one' };
+                throw new BadRequestException('Location is too close to the previous one');
             }
         }
 

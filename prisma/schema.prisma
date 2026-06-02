@@ -392,7 +392,7 @@ model MessageRead {
 }
 
 model Notification {
-  id         String   @id @default(uuid())
+  id Int @id @default(autoincrement())
 
   userId     Int
   user       User     @relation(fields: [userId], references: [id])

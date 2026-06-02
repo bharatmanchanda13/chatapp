@@ -9,6 +9,7 @@ import { LogoutDto } from './dto/logout.dto';
 import { Purpose, SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify.dto';
 import { RolesGuard } from './guards/roles.guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from './enums/role.enum';
 
@@ -35,7 +36,7 @@ export class AuthController {
     async logout(@Req() req: Request, @Body() body: LogoutDto) {
         const accessToken = req.headers.authorization as string;
         const refreshToken = body.refreshToken;
-        return this.jwtService.revokeTokens(req['user'].id, accessToken, refreshToken);
+        return this.authService.logout(req['user'].id, accessToken, refreshToken);
     }
 
     @UseGuards(AuthGuard)
@@ -65,5 +66,10 @@ export class AuthController {
                 };
             }
         } 
+    }
+
+    @Post('reset-password')
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto);
     }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from './firebase.service';
 import { NotificationType } from './create-notification.enum';
@@ -58,5 +58,53 @@ export class NotificationService {
         }
 
         return this.sendToUser(userId, title, body, fcmData);
+    }
+
+    async getUserNotifications(userId: number) {
+        return this.prisma.notification.findMany({
+            where: {
+                userId,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+    }
+
+    async markAsRead(userId: number, notificationId: number) {
+        const notification = await this.prisma.notification.findUnique({
+            where: {
+                id: notificationId,
+            },
+        });
+
+        if (!notification) {
+            throw new NotFoundException('Notification not found');
+        }
+
+        if (notification.userId !== userId) {
+            throw new ForbiddenException('You do not own this notification');
+        }
+
+        return this.prisma.notification.update({
+            where: {
+                id: notificationId,
+            },
+            data: {
+                isRead: true,
+            },
+        });
+    }
+
+    async markAllAsRead(userId: number) {
+        return this.prisma.notification.updateMany({
+            where: {
+                userId,
+                isRead: false,
+            },
+            data: {
+                isRead: true,
+            },
+        });
     }
 }

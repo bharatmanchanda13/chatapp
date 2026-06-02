@@ -9,6 +9,7 @@ import { VerifyOtpDto } from './dto/verify.dto';
 import { EmailService } from '../email/email.service';
 import { signupOtpTemplate } from '../email/templates/signup-otp.template';
 import { forgotPasswordOtpTemplate } from '../email/templates/forgot-password-otp.template';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -37,6 +38,10 @@ export class AuthService {
             throw new BadRequestException(
                 'Invalid credentials',
             );
+        }
+
+        if (!existingUser.isActive) {
+            throw new BadRequestException('Account is deactivated');
         }
 
         const isPasswordValid = await bcrypt.compare(dto.password, existingUser.password);
@@ -192,6 +197,10 @@ export class AuthService {
             },
         });
 
+        if (!record) {
+            throw new BadRequestException('Invalid or expired OTP');
+        }
+
         if (purpose === Purpose.EMAIL_VERIFICATION) {
             if (!name || !phone || !password || !confirmPassword) {
                 throw new BadRequestException('Missing required fields');
@@ -199,6 +208,19 @@ export class AuthService {
             if (password !== confirmPassword) {
                 throw new BadRequestException('Passwords do not match');
             }
+
+            const existingUser = await this.prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { email },
+                        { phone },
+                    ],
+                },
+            });
+            if (existingUser) {
+                throw new BadRequestException('User already exists');
+            }
+
             const user = await this.prisma.user.create({
                 data: {
                     name,
@@ -214,6 +236,14 @@ export class AuthService {
                     profile: true,
                 },
             });
+
+            await this.prisma.otpVerification.deleteMany({
+                where: {
+                    email,
+                    purpose,
+                },
+            });
+
             const { password: hashedPassword, accessTokens, refreshTokens, ...safeUser } = user;
             const { accessToken, refreshToken } = await this.jwtService.generateTokens(safeUser);
             return {
@@ -225,9 +255,7 @@ export class AuthService {
                 refreshToken
             };
         }
-        if (!record) {
-            throw new BadRequestException('Invalid or expired OTP');
-        }
+
         await this.prisma.otpVerification.deleteMany({
             where: {
                 email,
@@ -235,6 +263,61 @@ export class AuthService {
             },
         });
         return true;
+    }
+
+    async resetPassword(dto: ResetPasswordDto) {
+        const { email, otp, password, confirmPassword } = dto;
+
+        const record = await this.prisma.otpVerification.findFirst({
+            where: {
+                email,
+                otp,
+                purpose: Purpose.FORGOT_PASSWORD,
+                expiresAt: {
+                    gt: new Date(),
+                },
+            },
+        });
+
+        if (!record) {
+            throw new BadRequestException('Invalid or expired OTP');
+        }
+
+        if (password !== confirmPassword) {
+            throw new BadRequestException('Passwords do not match');
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: {
+                email,
+            },
+        });
+
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await this.prisma.user.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                password: hashedPassword,
+            },
+        });
+
+        await this.prisma.otpVerification.deleteMany({
+            where: {
+                email,
+                purpose: Purpose.FORGOT_PASSWORD,
+            },
+        });
+
+        return {
+            success: true,
+            message: 'Password reset successfully',
+        };
     }
 
 }

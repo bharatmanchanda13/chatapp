@@ -234,7 +234,11 @@ export class FriendService {
     async getFriendDetails(userId: number, friendId: number) {
         const friendship = await this.prisma.friendship.findFirst({
             where: {
-                id: friendId
+                id: friendId,
+                OR: [
+                    { userOneId: userId },
+                    { userTwoId: userId },
+                ],
             }
         });
 
@@ -275,11 +279,7 @@ export class FriendService {
 
         await this.prisma.friendship.delete({
             where: {
-                id: friendId,
-                OR: [
-                    { userOneId: currentUserId },
-                    { userTwoId: currentUserId },
-                ]
+                id: friendship.id,
             },
         });
 

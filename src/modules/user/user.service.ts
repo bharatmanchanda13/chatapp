@@ -109,18 +109,12 @@ export class UserService {
             throw new BadRequestException('You cannot block yourself');
         }
 
-        const existingBlock = await this.prisma.userBlock.findFirst({
+        const existingBlock = await this.prisma.userBlock.findUnique({
             where: {
-                OR: [
-                    {
-                        blockerId: data.blockerId,
-                        blockedId: data.blockedId,
-                    },
-                    {
-                        blockerId: data.blockedId,
-                        blockedId: data.blockerId,
-                    },
-                ],
+                blockerId_blockedId: {
+                    blockerId: data.blockerId,
+                    blockedId: data.blockedId,
+                },
             },
         });
 

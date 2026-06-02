@@ -1,6 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Get, Patch, Param, Req, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { NotificationService } from './notification.service';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import type { Request } from 'express';
 
 @Controller('notification')
 export class NotificationController {
@@ -24,5 +26,28 @@ export class NotificationController {
         };
     }
 
-    
+    @UseGuards(AuthGuard)
+    @Get()
+    async getList(@Req() req: Request) {
+        return this.notificationService.getUserNotifications(req['user'].id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Patch(':id/read')
+    async markAsRead(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() req: Request,
+    ) {
+        return this.notificationService.markAsRead(req['user'].id, id);
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('read-all')
+    async readAll(@Req() req: Request) {
+        await this.notificationService.markAllAsRead(req['user'].id);
+        return {
+            success: true,
+            message: 'All notifications marked as read',
+        };
+    }
 }
