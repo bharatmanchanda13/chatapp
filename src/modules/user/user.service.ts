@@ -16,7 +16,7 @@ export class UserService {
         private readonly paginationService: PaginationService,
         private readonly userFilterBuilder: UserFilterBuilder,
     ) { }
-    async getList(dto: UserFilterDto, currentUserId?: number) {
+    async getList(dto: UserFilterDto, currentUserId?: number, currentUserRole?: string) {
         let friendIds: number[] = [];
 
         if (dto.isFriend !== undefined && currentUserId) {
@@ -38,7 +38,7 @@ export class UserService {
             );
         }
 
-        return this.paginationService.paginate(this.prisma.user, {
+        const result = await this.paginationService.paginate(this.prisma.user, {
             page: dto.page,
             limit: dto.perPage,
 
@@ -60,6 +60,35 @@ export class UserService {
                 id: 'desc',
             },
         });
+
+        let sentRequestIds: number[] = [];
+        if (currentUserId) {
+            const requests = await this.prisma.friendRequest.findMany({
+                where: {
+                    senderId: currentUserId,
+                    status: 'PENDING',
+                },
+                select: {
+                    receiverId: true,
+                },
+            });
+            sentRequestIds = requests.map((r) => r.receiverId);
+        }
+
+        result.data = result.data.map((user: any) => {
+            const hasSentRequest = sentRequestIds.includes(user.id);
+            const userObj = {
+                ...user,
+                hasSentRequest,
+            };
+            if (currentUserRole !== 'ADMIN' && user.id !== currentUserId) {
+                userObj.email = null;
+                userObj.phone = null;
+            }
+            return userObj;
+        });
+
+        return result;
     }
 
     async getOne(id: number) {

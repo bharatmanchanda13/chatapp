@@ -20,15 +20,21 @@ export class ProfileController {
         return this.profileService.update(dto, userId);
     }
 
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
-    @Get(':id')
-    async viewProfile(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
-        return this.profileService.view(id, req['user'].id);
+    @UseGuards(AuthGuard)
+    @Get('me')
+    async getMyProfile(@Req() req: any) {
+        const userId = req['user'].id;
+        return this.profileService.view(userId, userId, req['user'].role);
     }
 
-    @UseGuards(AuthGuard, RolesGuard)
-    @Get()
+    @UseGuards(AuthGuard)
+    @Get(':id')
+    async viewProfile(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+        return this.profileService.view(id, req['user'].id, req['user'].role);
+    }
+
+    @UseGuards(AuthGuard)
+    @Get("me")
     async getMe(@Req() req: Request) {
         const userId = req['user'].id;
         return this.profileService.getMe(userId);

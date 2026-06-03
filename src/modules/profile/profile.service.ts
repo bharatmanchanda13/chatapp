@@ -15,15 +15,17 @@ export class ProfileService {
         private readonly notificationService: NotificationService,
     ) {}
     async update(dto: UpdateProfileDto, userId: number) {
+        const updateData: any = { ...dto };
+        if (dto.dob) {
+            updateData.dob = new Date(dto.dob);
+        }
         return this.prisma.profile.update({
             where: { userId },
-            data: {
-                ...dto,
-            }
+            data: updateData,
         });
     }
 
-    async view(userId: number, authUserId: number) {
+    async view(userId: number, authUserId: number, authUserRole?: string) {
         const profile = await this.prisma.profile.findFirst({
             where: { userId },
             include: {
@@ -70,7 +72,32 @@ export class ProfileService {
                 }
             }
         }
-        return profile;
+
+        const friendRequest = await this.prisma.friendRequest.findFirst({
+            where: {
+                OR: [
+                    { senderId: authUserId, receiverId: userId },
+                    { senderId: userId, receiverId: authUserId },
+                ],
+            },
+        });
+
+        const result: any = {
+            ...profile,
+            friendRequest: friendRequest ? {
+                id: friendRequest.id,
+                senderId: friendRequest.senderId,
+                receiverId: friendRequest.receiverId,
+                status: friendRequest.status,
+            } : null,
+        };
+
+        if (result?.user && authUserId !== userId && authUserRole !== 'ADMIN') {
+            result.user.email = null;
+            result.user.phone = null;
+        }
+
+        return result;
     }
 
     async updateLocation(dto: UpdateLocationDto, userId: number) {
@@ -80,7 +107,17 @@ export class ProfileService {
             },
         });
 
-        if (existing && existing.latitude && existing.longitude) {
+        if (!existing) {
+            return this.prisma.profile.create({
+                data: {
+                    userId,
+                    latitude: dto.latitude,
+                    longitude: dto.longitude,
+                }
+            });
+        }
+
+        if (existing.latitude && existing.longitude) {
             const distance = getDistance(
                 { latitude: existing.latitude, longitude: existing.longitude },
                 { latitude: dto.latitude, longitude: dto.longitude }

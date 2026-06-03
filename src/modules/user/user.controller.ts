@@ -18,7 +18,7 @@ export class UserController {
     // @Roles(Role.ADMIN)
     @Get()
     async getList(@Query() dto: UserFilterDto, @Req() req: any) {
-        return this.userService.getList(dto, req['user'].id);
+        return this.userService.getList(dto, req['user'].id, req['user'].role);
     }
 
     @UseGuards(AuthGuard, RolesGuard)

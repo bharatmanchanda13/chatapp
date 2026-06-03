@@ -24,8 +24,8 @@ export class ConversationController {
     @Get(':id')
     async getDetails(
         @Param('id', ParseIntPipe) id: number,
-        @Req() req: Request,
+        @Req() req: any,
     ) {
-        return this.conversationService.getDetails(id, req['user'].id);
+        return this.conversationService.getDetails(id, req['user'].id, req['user'].role);
     }
 }

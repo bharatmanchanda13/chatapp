@@ -191,7 +191,7 @@ export class ConversationService {
         };
     }
 
-    async getDetails(conversationId: number, userId: number) {
+    async getDetails(conversationId: number, userId: number, userRole?: string) {
         const conversation = await this.prisma.conversation.findFirst({
             where: {
                 id: conversationId,
@@ -231,6 +231,14 @@ export class ConversationService {
 
         if (!conversation) {
             throw new NotFoundException('Conversation not found');
+        }
+
+        if (userRole !== 'ADMIN') {
+            conversation.participants.forEach((p: any) => {
+                if (p.user && p.userId !== userId) {
+                    p.user.email = null;
+                }
+            });
         }
 
         const otherParticipant = conversation.participants.find(p => p.userId !== userId);
