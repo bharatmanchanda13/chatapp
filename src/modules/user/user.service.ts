@@ -15,7 +15,7 @@ export class UserService {
         private readonly authService: AuthService,
         private readonly paginationService: PaginationService,
         private readonly userFilterBuilder: UserFilterBuilder,
-    ) {}
+    ) { }
     async getList(dto: UserFilterDto, currentUserId?: number) {
         let friendIds: number[] = [];
 

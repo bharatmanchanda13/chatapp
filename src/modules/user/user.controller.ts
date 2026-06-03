@@ -49,20 +49,20 @@ export class UserController {
         return this.userService.update(id, dto);
     }
 
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.USER)
+    @UseGuards(AuthGuard)
+    // @Roles(Role.USER)
     @Post(':blockedId/block')
     async block(@Param('blockedId', ParseIntPipe) blockedId: number, @Body() dto: BlockUserDto, @Req() req: Request) {
         const data = {
-            blockerId: req['user'].id,
+            blockerId: Number(req['user'].id),
             blockedId: blockedId,
-            reason: dto.reason || null,
+            reason: dto.reason || undefined,
         };
         return this.userService.block(data);
     }
 
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.USER)
+    @UseGuards(AuthGuard)
+    // @Roles(Role.USER)
     @Delete(':unblockedId/unblock')
     async unblock(@Param('unblockedId', ParseIntPipe) unblockedId: number, @Req() req: Request) {
         const data = {

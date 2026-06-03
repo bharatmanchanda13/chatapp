@@ -7,7 +7,7 @@ export class ConversationService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly chatService: ChatService
-    ) {}
+    ) { }
     async getList(userId: number) {
         const conversations = await this.prisma.conversation.findMany({
             where: {
@@ -42,8 +42,38 @@ export class ConversationService {
             orderBy: {
                 updatedAt: "desc"
             }
-        })
-        return conversations;
+        });
+
+        const blocks = await this.prisma.userBlock.findMany({
+            where: {
+                OR: [
+                    { blockerId: userId },
+                    { blockedId: userId }
+                ]
+            }
+        });
+
+        const blockedByMeIds = new Set<number>();
+        const blockedMeIds = new Set<number>();
+        blocks.forEach(b => {
+            if (b.blockerId === userId) blockedByMeIds.add(b.blockedId);
+            if (b.blockedId === userId) blockedMeIds.add(b.blockerId);
+        });
+
+        return conversations.map(c => {
+            const otherParticipant = c.participants.find(p => p.userId !== userId);
+            const otherUserId = otherParticipant ? otherParticipant.userId : null;
+            const blockedByMe = otherUserId ? blockedByMeIds.has(otherUserId) : false;
+            const blockedMe = otherUserId ? blockedMeIds.has(otherUserId) : false;
+            const isBlocked = blockedByMe || blockedMe;
+            return {
+                ...c,
+                isBlock: isBlocked,
+                isBlocked: isBlocked,
+                blockedByMe,
+                blockedMe
+            };
+        });
     }
 
     async findOrCreateDirectConversation(userId: number, participantId: number) {
@@ -91,7 +121,25 @@ export class ConversationService {
         });
 
         if (existingConversation) {
-            return existingConversation;
+            const blocks = await this.prisma.userBlock.findMany({
+                where: {
+                    OR: [
+                        { blockerId: userId, blockedId: participantId },
+                        { blockerId: participantId, blockedId: userId }
+                    ]
+                }
+            });
+            const blockedByMe = blocks.some(b => b.blockerId === userId && b.blockedId === participantId);
+            const blockedMe = blocks.some(b => b.blockerId === participantId && b.blockedId === userId);
+            const isBlock = blockedByMe || blockedMe;
+
+            return {
+                ...existingConversation,
+                isBlock,
+                isBlocked: isBlock,
+                blockedByMe,
+                blockedMe
+            };
         }
 
         // 2. Otherwise create a new direct conversation
@@ -122,7 +170,25 @@ export class ConversationService {
             }
         });
 
-        return newConversation;
+        const blocks = await this.prisma.userBlock.findMany({
+            where: {
+                OR: [
+                    { blockerId: userId, blockedId: participantId },
+                    { blockerId: participantId, blockedId: userId }
+                ]
+            }
+        });
+        const blockedByMe = blocks.some(b => b.blockerId === userId && b.blockedId === participantId);
+        const blockedMe = blocks.some(b => b.blockerId === participantId && b.blockedId === userId);
+        const isBlock = blockedByMe || blockedMe;
+
+        return {
+            ...newConversation,
+            isBlock,
+            isBlocked: isBlock,
+            blockedByMe,
+            blockedMe
+        };
     }
 
     async getDetails(conversationId: number, userId: number) {
@@ -167,6 +233,29 @@ export class ConversationService {
             throw new NotFoundException('Conversation not found');
         }
 
-        return conversation;
+        const otherParticipant = conversation.participants.find(p => p.userId !== userId);
+        let blockedByMe = false;
+        let blockedMe = false;
+        if (otherParticipant) {
+            const blocks = await this.prisma.userBlock.findMany({
+                where: {
+                    OR: [
+                        { blockerId: userId, blockedId: otherParticipant.userId },
+                        { blockerId: otherParticipant.userId, blockedId: userId }
+                    ]
+                }
+            });
+            blockedByMe = blocks.some(b => b.blockerId === userId && b.blockedId === otherParticipant.userId);
+            blockedMe = blocks.some(b => b.blockerId === otherParticipant.userId && b.blockedId === userId);
+        }
+        const isBlock = blockedByMe || blockedMe;
+
+        return {
+            ...conversation,
+            isBlock,
+            isBlocked: isBlock,
+            blockedByMe,
+            blockedMe
+        };
     }
 }

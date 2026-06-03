@@ -1,19 +1,20 @@
-import { IsEmail, IsPhoneNumber, IsString } from "class-validator"
+import { IsEmail, IsOptional, IsPhoneNumber, IsString } from "class-validator"
 
 export class UpdateUserDto {
     @IsString()
-    name: 'string';
+    name: string;
 
     @IsString()
     @IsEmail()
-    email: 'string';
+    email: string;
 
     @IsString()
     @IsPhoneNumber('IN')
-    phone: 'string';
+    phone: string;
 };
 
 export class BlockUserDto {
+    @IsOptional()
     @IsString()
-    reason: 'string';
+    reason?: string;
 }
