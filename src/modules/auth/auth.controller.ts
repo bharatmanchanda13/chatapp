@@ -6,13 +6,13 @@ import type { Request } from 'express';
 import { JwtService } from '../jwt/jwt.service';
 import { AuthGuard } from './guards/auth.guard';
 import { LogoutDto } from './dto/logout.dto';
-import { Purpose, SendOtpDto } from './dto/send-otp.dto';
+import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify.dto';
 import { RolesGuard } from './guards/roles.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Roles } from './decorators/roles.decorator';
-import { Role } from './enums/role.enum';
 import { GoogleLoginDto } from './dto/google-login.dto';
+import { OtpPurpose, Role } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -55,7 +55,7 @@ export class AuthController {
 
     @Post('verify-otp')
     async verifyOtp(@Body() dto: VerifyOtpDto) {
-        if (dto.purpose === Purpose.EMAIL_VERIFICATION) {
+        if (dto.purpose === OtpPurpose.EMAIL_VERIFICATION) {
             const result = await this.authService.verifyOtp(dto) as any;
             if (result) {
                 return {

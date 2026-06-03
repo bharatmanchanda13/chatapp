@@ -1,12 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
-
-export enum MessageType {
-    TEXT = 'TEXT',
-    IMAGE = 'IMAGE',
-    VIDEO = 'VIDEO',
-    AUDIO = 'AUDIO',
-    FILE = 'FILE',
-}
+import { IsInt, IsString } from 'class-validator';
 
 export class UpdateMessageDto {
     @IsInt()

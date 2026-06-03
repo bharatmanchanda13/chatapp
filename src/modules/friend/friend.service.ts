@@ -1,10 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-import { FriendRequestAction } from './dto/respond-friend-request.dto';
 import { ChatService } from '../chat/chat.service';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from '../notification/create-notification.enum';
+import { FriendRequestStatus, NotificationType } from '@prisma/client';
 
 @Injectable()
 export class FriendService {
@@ -81,7 +80,7 @@ export class FriendService {
 
 
     // Accept / Decline Request
-    async updateFriendRequest(requestId: number, userId: number, status: FriendRequestAction) {
+    async updateFriendRequest(requestId: number, userId: number, status: FriendRequestStatus | 'CANCELLED') {
         const result = await this.prisma.$transaction(
             async (tx) => {
 
@@ -99,7 +98,7 @@ export class FriendService {
                     throw new BadRequestException('Request already handled');
                 }
 
-                if (status === FriendRequestAction.ACCEPTED) {
+                if (status === FriendRequestStatus.ACCEPTED) {
                     if (request.receiverId !== userId) {
                         throw new BadRequestException('Unauthorized action');
                     }
@@ -135,7 +134,7 @@ export class FriendService {
                     return { updatedRequest, senderId: request.senderId, receiverId: request.receiverId };
                 }
 
-                if (status === FriendRequestAction.CANCELLED) {
+                if (status === "CANCELLED") {
                     if (request.senderId !== userId && request.receiverId !== userId) {
                         throw new BadRequestException('Unauthorized action');
                     }
@@ -153,7 +152,7 @@ export class FriendService {
             },
         );
 
-        if (status === FriendRequestAction.ACCEPTED && result && 'updatedRequest' in result) {
+        if (status === FriendRequestStatus.ACCEPTED && result && 'updatedRequest' in result) {
             const res = result as { updatedRequest: any; senderId: number; receiverId: number };
             try {
                 const receiver = await this.prisma.user.findUnique({

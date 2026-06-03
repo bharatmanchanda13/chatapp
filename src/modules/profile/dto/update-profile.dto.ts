@@ -1,3 +1,4 @@
+import { Gender, RelationshipStatus } from '@prisma/client';
 import {
   IsArray,
   IsDateString,
@@ -9,23 +10,6 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-
-export enum Gender {
-  MALE = 'MALE',
-  FEMALE = 'FEMALE',
-  NON_BINARY = 'NON_BINARY',
-  OTHER = 'OTHER',
-  PREFER_NOT_TO_SAY = 'PREFER_NOT_TO_SAY',
-}
-
-export enum RelationshipStatus {
-  SINGLE = 'SINGLE',
-  IN_A_RELATIONSHIP = 'IN_A_RELATIONSHIP',
-  MARRIED = 'MARRIED',
-  DIVORCED = 'DIVORCED',
-  WIDOWED = 'WIDOWED',
-  SEPARATED = 'SEPARATED',
-}
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -48,11 +32,6 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(1000)
   bio?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  lookingFor?: string;
 
   @IsOptional()
   @IsLongitude()

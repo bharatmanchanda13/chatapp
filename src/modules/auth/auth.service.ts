@@ -4,13 +4,14 @@ import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '../jwt/jwt.service';
-import { Purpose, SendOtpDto } from './dto/send-otp.dto';
+import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify.dto';
 import { EmailService } from '../email/email.service';
 import { signupOtpTemplate } from '../email/templates/signup-otp.template';
 import { forgotPasswordOtpTemplate } from '../email/templates/forgot-password-otp.template';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GoogleService } from './google.service';
+import { OtpPurpose } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -107,7 +108,7 @@ export class AuthService {
         // Send email verification OTP using sendOtp
         await this.sendOtp({
             email: dto.email,
-            purpose: Purpose.EMAIL_VERIFICATION,
+            purpose: OtpPurpose.EMAIL_VERIFICATION,
         });
 
         const { password: _, accessTokens, refreshTokens, ...safeUser } = user;
@@ -133,7 +134,7 @@ export class AuthService {
     async sendOtp(dto: SendOtpDto) {
         const { email, purpose } = dto;
 
-        if (purpose === Purpose.EMAIL_VERIFICATION) {
+        if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
             const user = await this.prisma.user.findUnique({
                 where: {
                     email,
@@ -167,11 +168,11 @@ export class AuthService {
         let subject = '';
         let bodyHtml = ``;
 
-        if (purpose === Purpose.EMAIL_VERIFICATION) {
+        if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
             const template = signupOtpTemplate(otp, 10);
             subject = template.subject;
             bodyHtml = template.html;
-        } else if (purpose === Purpose.FORGOT_PASSWORD) {
+        } else if (purpose === OtpPurpose.FORGOT_PASSWORD) {
             const template = forgotPasswordOtpTemplate(otp, 10);
             subject = template.subject;
             bodyHtml = template.html;
@@ -212,7 +213,7 @@ export class AuthService {
             throw new BadRequestException('Invalid or expired OTP');
         }
 
-        if (purpose === Purpose.EMAIL_VERIFICATION) {
+        if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
             if (!name || !phone || !password || !confirmPassword) {
                 throw new BadRequestException('Missing required fields');
             }
@@ -283,7 +284,7 @@ export class AuthService {
             where: {
                 email,
                 otp,
-                purpose: Purpose.FORGOT_PASSWORD,
+                purpose: OtpPurpose.FORGOT_PASSWORD,
                 expiresAt: {
                     gt: new Date(),
                 },
@@ -321,7 +322,7 @@ export class AuthService {
         await this.prisma.otpVerification.deleteMany({
             where: {
                 email,
-                purpose: Purpose.FORGOT_PASSWORD,
+                purpose: OtpPurpose.FORGOT_PASSWORD,
             },
         });
 

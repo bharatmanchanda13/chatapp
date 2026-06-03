@@ -2,12 +2,11 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   ValidateIf,
   MinLength,
 } from 'class-validator';
-import { Purpose } from './send-otp.dto';
+import { OtpPurpose } from '@prisma/client';
 
 export class VerifyOtpDto {
   @IsEmail()
@@ -17,32 +16,32 @@ export class VerifyOtpDto {
   @IsNotEmpty()
   otp: string;
 
-  @IsEnum(Purpose)
-  purpose: Purpose;
+  @IsEnum(OtpPurpose)
+  purpose: OtpPurpose;
 
   @ValidateIf(
-    (o) => o.purpose === Purpose.EMAIL_VERIFICATION,
+    (o) => o.purpose === OtpPurpose.EMAIL_VERIFICATION,
   )
   @IsString()
   @IsNotEmpty()
   name?: string;
 
   @ValidateIf(
-    (o) => o.purpose === Purpose.EMAIL_VERIFICATION,
+    (o) => o.purpose === OtpPurpose.EMAIL_VERIFICATION,
   )
   @IsString()
   @IsNotEmpty()
   phone?: string;
 
   @ValidateIf(
-    (o) => o.purpose === Purpose.EMAIL_VERIFICATION,
+    (o) => o.purpose === OtpPurpose.EMAIL_VERIFICATION,
   )
   @IsString()
   @MinLength(6)
   password?: string;
 
   @ValidateIf(
-    (o) => o.purpose === Purpose.EMAIL_VERIFICATION,
+    (o) => o.purpose === OtpPurpose.EMAIL_VERIFICATION,
   )
   @IsString()
   @MinLength(6)

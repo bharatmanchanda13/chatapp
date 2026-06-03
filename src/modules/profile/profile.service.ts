@@ -4,9 +4,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateLocationDto } from './dto/update-location';
 import { getDistance } from 'geolib';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from '../notification/create-notification.enum';
 import { CreateMediaDto } from '../album/dto/create-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class ProfileService {

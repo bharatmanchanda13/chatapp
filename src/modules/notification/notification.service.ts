@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FirebaseService } from './firebase.service';
-import { NotificationType } from './create-notification.enum';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class NotificationService {

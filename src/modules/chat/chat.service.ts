@@ -1,15 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { MessageType, SendMessageDto } from './dto/send-message.dto';
+import { SendMessageDto } from './dto/send-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
-import { NotificationType } from '../notification/create-notification.enum';
+import { MessageStatus, MessageType, NotificationType } from '@prisma/client';
 
-export enum MessageStatus {
-    SENT = 'SENT',
-    DELIVERED = 'DELIVERED',
-    READ = 'READ',
-}
 @Injectable()
 export class ChatService {
     constructor(

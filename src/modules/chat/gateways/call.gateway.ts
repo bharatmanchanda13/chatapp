@@ -14,9 +14,9 @@ import { CALL_EVENTS, CHAT_EVENTS } from '../events';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConversationService } from '../../conversation/conversation.service';
 import { NotificationService } from '../../notification/notification.service';
-import { NotificationType } from '../../notification/create-notification.enum';
 
 import type { SocketUser } from '../interfaces/socket-user.interface';
+import { NotificationType } from '@prisma/client';
 
 interface CallSession {
     callerId: number;

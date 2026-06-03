@@ -97,6 +97,32 @@ enum MediaOwnerType {
   ALBUM
 }
 
+enum ReportType {
+  USER
+  MESSAGE
+  PHOTO
+  AUDIO_CALL
+  VIDEO_CALL
+}
+
+enum ReportReason {
+  SPAM
+  FAKE_PROFILE
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  SCAM
+  UNDERAGE
+  VIOLENCE
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  ACTION_TAKEN
+  REJECTED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
 
@@ -154,6 +180,10 @@ model User {
 
   createdConversations Conversation[] @relation("ConversationCreator")
 
+  reportsMade     Report[] @relation("Reporter")
+
+  reportsReceived Report[] @relation("Reported")
+
   notifications Notification[]
 
   albums Album[]
@@ -198,8 +228,6 @@ model Profile {
   height Float? // cm
 
   bio String? @db.Text
-
-  lookingFor String?
 
   latitude Float?
 
@@ -450,4 +478,28 @@ model Album {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id           Int     @id   @default(autoincrement())
+  reporterId   Int
+  reportedId   Int
+
+  reportType   ReportType
+  reason       ReportReason
+  description  String?
+
+  messageId    String?
+  photoId      String?
+
+  status       ReportStatus @default(PENDING)
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  reporter     User @relation("Reporter", fields: [reporterId], references: [id])
+  reportedUser User @relation("Reported", fields: [reportedId], references: [id])
+
+  @@index([reporterId])
+  @@index([reportedId])
 }

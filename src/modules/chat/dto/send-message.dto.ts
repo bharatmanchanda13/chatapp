@@ -1,12 +1,5 @@
+import { MessageType } from '@prisma/client';
 import { IsEnum, IsInt, IsString } from 'class-validator';
-
-export enum MessageType {
-	TEXT = 'TEXT',
-	IMAGE = 'IMAGE',
-	VIDEO = 'VIDEO',
-	AUDIO = 'AUDIO',
-	FILE = 'FILE',
-}
 
 export class SendMessageDto {
     @IsInt()

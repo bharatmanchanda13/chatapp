@@ -4,10 +4,10 @@ import { UserService } from './user.service';
 import { BlockUserDto, UpdateUserDto } from './dto/update-user.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../auth/enums/role.enum';
 import { RegisterDto } from '../auth/dto/register.dto';
 import { UserFilterDto } from './dto/user-filter.dto';
 import { RegisterDeviceDto } from './dto/register-device.dto';
+import { Role } from '@prisma/client';
 
 @Controller('user')
 export class UserController {

@@ -24,10 +24,15 @@ import { AlbumModule } from './modules/album/album.module';
 import { EmailService } from './modules/email/email.service';
 import { EmailModule } from './modules/email/email.module';
 import { ConfigModule } from '@nestjs/config';
+import { ReportController } from './modules/report/report.controller';
+import { ReportModule } from './modules/report/report.module';
+import { MasterDataController } from './modules/master-data/master-data.controller';
+import { MasterDataService } from './modules/master-data/master-data.service';
+import { MasterDataModule } from './modules/master-data/master-data.module';
 
 @Module({
-    imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule, AlbumModule, EmailModule, ConfigModule.forRoot({isGlobal: true})],
-    controllers: [AppController, ConversationController, ProfileController, MediaController],
-    providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service, EmailService],
+    imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule, AlbumModule, EmailModule, ConfigModule.forRoot({isGlobal: true}), ReportModule, MasterDataModule],
+    controllers: [AppController, ConversationController, ProfileController, MediaController, ReportController, MasterDataController],
+    providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service, EmailService, MasterDataService],
 })
 export class AppModule { }

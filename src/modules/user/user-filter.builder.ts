@@ -106,8 +106,6 @@ export class UserFilterBuilder {
 
                 height: PrismaFilter.equals(dto.height),
 
-                lookingFor: PrismaFilter.contains(dto.lookingFor),
-
                 interests: PrismaFilter.in(dto.interests),
 
                 latitude: latitudeFilter,

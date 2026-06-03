@@ -49,10 +49,6 @@ export class UserFilterDto extends PaginationDto {
     height?: number;
 
     @IsOptional()
-    @IsString()
-    lookingFor?: string;
-
-    @IsOptional()
     @IsArray()
     @IsString({ each: true })
     interests?: string[];
