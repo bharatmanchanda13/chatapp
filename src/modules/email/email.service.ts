@@ -1,36 +1,37 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-    private readonly transporter: nodemailer.Transporter;
+    private readonly resend: Resend;
 
-    constructor(private readonly configService: ConfigService) {
-        this.transporter = nodemailer.createTransport({
-            host: this.configService.get<string>('BREVO_SMTP_HOST'),
-            port: this.configService.get<number>('BREVO_SMTP_PORT'),
-            secure: false,
-            auth: {
-                user: this.configService.get<string>('BREVO_SMTP_USER'),
-                pass: this.configService.get<string>('BREVO_SMTP_PASSWORD'),
-            },
-        });
+    constructor(
+        private readonly configService: ConfigService,
+    ) {
+        this.resend = new Resend(
+            this.configService.get<string>('RESEND_API_KEY'),
+        );
     }
-
     async sendEmail(
         to: string,
         subject: string,
         html: string,
     ): Promise<void> {
         try {
-            await this.transporter.sendMail({
-                from: this.configService.get<string>('MAIL_FROM'),
+
+            const { error } = await this.resend.emails.send({
+                from: this.configService.get<string>('MAIL_FROM')!,
                 to,
                 subject,
-                html
+                html,
             });
+
+            if (error) {
+                throw error;
+            }
         } catch (error) {
+            console.error('Failed to send email:', error);
             throw new InternalServerErrorException('Failed to send email');
         }
     }

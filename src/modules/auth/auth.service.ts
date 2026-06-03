@@ -132,17 +132,18 @@ export class AuthService {
         });
     }
 
+
     async sendOtp(dto: SendOtpDto) {
         const { email, purpose } = dto;
 
         if (purpose === Purpose.EMAIL_VERIFICATION) {
+            
             const user = await this.prisma.user.findUnique({
                 where: {
                     email,
                     isEmailVerified: true,
                 },
             });
-
             if (user) {
                 throw new BadRequestException('User with this email already exists and is verified');
             }
@@ -182,6 +183,10 @@ export class AuthService {
 
         try {
             await this.emailService.sendEmail(email, subject, bodyHtml);
+            return {
+                success: true,
+                message: 'OTP sent successfully',
+            };
         } catch (error) {
             console.error('Failed to send OTP email:', error);
             throw new BadRequestException('Failed to send OTP email');
