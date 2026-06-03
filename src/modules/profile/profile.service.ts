@@ -171,4 +171,13 @@ export class ProfileService {
             where: { id: mediaId },
         });
     }
+
+    async getMe(userId: number) {
+        return this.prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                profile: true,
+            },
+        });
+    }
 }

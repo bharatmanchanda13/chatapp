@@ -5,6 +5,9 @@ import { ProfileService } from './profile.service';
 import { UpdateLocationDto } from './dto/update-location';
 import { CreateMediaDto } from '../album/dto/create-media.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 
 @Controller('profile')
 export class ProfileController {
@@ -17,10 +20,18 @@ export class ProfileController {
         return this.profileService.update(dto, userId);
     }
 
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
     @Get(':id')
     async viewProfile(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
         return this.profileService.view(id, req['user'].id);
+    }
+
+    @UseGuards(AuthGuard, RolesGuard)
+    @Get()
+    async getMe(@Req() req: Request) {
+        const userId = req['user'].id;
+        return this.profileService.getMe(userId);
     }
 
     @UseGuards(AuthGuard)
@@ -57,4 +68,6 @@ export class ProfileController {
         const userId = req['user'].id;
         return this.profileService.deleteMedia(userId, mediaId);
     }
+
+    
 }
