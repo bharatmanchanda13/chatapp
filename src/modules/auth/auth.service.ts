@@ -22,7 +22,10 @@ export class AuthService {
     ) { }
 
     private generateOtp(): string {
-        return Math.floor(100000 + Math.random() * 900000).toString();
+        if (process.env.NODE_ENV === 'production') {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+        }
+        return '123456';
     }
     async login(dto: LoginDto): Promise<any> {
         const existingUser = await this.prisma.user.findFirst({
@@ -101,12 +104,6 @@ export class AuthService {
             },
         });
 
-        await this.prisma.profile.create({
-            data: {
-                userId: user.id,
-            },
-        });
-
         // Send email verification OTP using sendOtp
         await this.sendOtp({
             email: dto.email,
@@ -137,7 +134,6 @@ export class AuthService {
         const { email, purpose } = dto;
 
         if (purpose === Purpose.EMAIL_VERIFICATION) {
-            
             const user = await this.prisma.user.findUnique({
                 where: {
                     email,
@@ -182,6 +178,12 @@ export class AuthService {
         }
 
         try {
+            if (process.env.NODE_ENV === 'development') {
+                return {
+                    success: true,
+                    message: 'OTP sent successfully',
+                };
+            }
             await this.emailService.sendEmail(email, subject, bodyHtml);
             return {
                 success: true,
@@ -243,12 +245,6 @@ export class AuthService {
                 },
                 include: {
                     profile: true,
-                },
-            });
-
-            await this.prisma.profile.create({
-                data: {
-                    userId: user.id,
                 },
             });
 
