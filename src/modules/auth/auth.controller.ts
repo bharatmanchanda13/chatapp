@@ -12,6 +12,7 @@ import { RolesGuard } from './guards/roles.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from './enums/role.enum';
+import { GoogleLoginDto } from './dto/google-login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -36,7 +37,8 @@ export class AuthController {
     async logout(@Req() req: Request, @Body() body: LogoutDto) {
         const accessToken = req.headers.authorization as string;
         const refreshToken = body.refreshToken;
-        return this.authService.logout(req['user'].id, accessToken, refreshToken);
+        const userId = (req['user'] as any).id;
+        return this.authService.logout(userId, accessToken, refreshToken);
     }
 
     @UseGuards(AuthGuard)
@@ -71,5 +73,12 @@ export class AuthController {
     @Post('reset-password')
     async resetPassword(@Body() dto: ResetPasswordDto) {
         return this.authService.resetPassword(dto);
+    }
+
+    @Post('google')
+    async googleLogin(
+        @Body() dto: GoogleLoginDto,
+    ) {
+        return this.authService.googleLogin(dto.idToken);
     }
 }

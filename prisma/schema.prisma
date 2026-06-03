@@ -16,6 +16,11 @@ enum Role {
   ADMIN
 }
 
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 enum FriendRequestStatus {
   PENDING
   ACCEPTED
@@ -104,6 +109,10 @@ model User {
   phone     String?  @unique
 
   password  String
+
+  googleId      String? @unique
+
+  provider      AuthProvider @default(LOCAL)
 
   deviceTokens DeviceToken[]
 

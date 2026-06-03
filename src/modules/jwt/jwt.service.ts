@@ -82,17 +82,13 @@ export class JwtService {
         });
 
         if (!user) {
-            throw new UnauthorizedException(
-                'User not found',
-            );
+            throw new UnauthorizedException('User not found');
         }
 
         const exists = user.accessTokens.includes(token);
 
         if (!exists) {
-            throw new UnauthorizedException(
-                'Access token not found',
-            );
+            throw new UnauthorizedException('Access token not found');
         }
 
         return decoded;

@@ -9,7 +9,7 @@ export class MediaController {
     @Post('upload-url')
     async generateUploadUrl(@Body() dto: GenerateUploadDto, @Req() req: Request) {
         return this.mediaService.generateUploadUrl(
-            req['user'].id,
+            (req['user'] as any).id,
             dto.fileName,
             dto.mimeType,
         );

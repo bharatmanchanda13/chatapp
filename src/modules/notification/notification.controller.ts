@@ -29,7 +29,7 @@ export class NotificationController {
     @UseGuards(AuthGuard)
     @Get()
     async getList(@Req() req: Request) {
-        return this.notificationService.getUserNotifications(req['user'].id);
+        return this.notificationService.getUserNotifications((req['user'] as any).id);
     }
 
     @UseGuards(AuthGuard)
@@ -38,13 +38,13 @@ export class NotificationController {
         @Param('id', ParseIntPipe) id: number,
         @Req() req: Request,
     ) {
-        return this.notificationService.markAsRead(req['user'].id, id);
+        return this.notificationService.markAsRead((req['user'] as any).id, id);
     }
 
     @UseGuards(AuthGuard)
     @Post('read-all')
     async readAll(@Req() req: Request) {
-        await this.notificationService.markAllAsRead(req['user'].id);
+        await this.notificationService.markAllAsRead((req['user'] as any).id);
         return {
             success: true,
             message: 'All notifications marked as read',

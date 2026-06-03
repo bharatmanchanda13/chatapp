@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,6 +10,7 @@ import { EmailService } from '../email/email.service';
 import { signupOtpTemplate } from '../email/templates/signup-otp.template';
 import { forgotPasswordOtpTemplate } from '../email/templates/forgot-password-otp.template';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { GoogleService } from './google.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly emailService: EmailService,
+        private googleService: GoogleService,
     ) { }
 
     private generateOtp(): string {
@@ -35,9 +37,7 @@ export class AuthService {
             },
         });
         if (!existingUser) {
-            throw new BadRequestException(
-                'Invalid credentials',
-            );
+            throw new BadRequestException('Invalid credentials');
         }
 
         if (!existingUser.isActive) {
@@ -46,9 +46,7 @@ export class AuthService {
 
         const isPasswordValid = await bcrypt.compare(dto.password, existingUser.password);
         if (!isPasswordValid) {
-            throw new BadRequestException(
-                'Invalid credentials',
-            );
+            throw new BadRequestException('Invalid credentials');
         }
 
         const { password, accessTokens, refreshTokens, ...safeUser } = existingUser;
@@ -100,6 +98,12 @@ export class AuthService {
             },
             include: {
                 profile: true,
+            },
+        });
+
+        await this.prisma.profile.create({
+            data: {
+                userId: user.id,
             },
         });
 
@@ -237,6 +241,12 @@ export class AuthService {
                 },
             });
 
+            await this.prisma.profile.create({
+                data: {
+                    userId: user.id,
+                },
+            });
+
             await this.prisma.otpVerification.deleteMany({
                 where: {
                     email,
@@ -317,6 +327,53 @@ export class AuthService {
         return {
             success: true,
             message: 'Password reset successfully',
+        };
+    }
+
+    async googleLogin(idToken: string) {
+        const payload = await this.googleService.verifyToken(
+            idToken,
+        );
+
+        if (!payload?.email) {
+            throw new Error('Invalid Google Token');
+        }
+
+        let user = await this.prisma.user.findUnique({
+            where: {
+                email: payload.email,
+            }
+        });
+
+        if (!user && payload.name && payload.email && payload.sub) {
+            user = await this.prisma.user.create({
+                data: {
+                    email: payload.email,
+                    name: payload.name,
+                    googleId: payload.sub,
+                    provider: 'GOOGLE',
+                    password: await bcrypt.hash(payload.sub, 10),
+                },
+            });
+            await this.prisma.profile.create({
+                data: {
+                    userId: user.id,
+                },
+            });
+        }
+        if (!user) {
+            throw new UnauthorizedException('User not found');
+        }
+
+        const { password, accessTokens, refreshTokens, ...safeUser } = user;
+        const { accessToken, refreshToken } = await this.jwtService.generateTokens(safeUser);
+
+        return {
+            accessToken,
+            refreshToken,
+            user: {
+                ...safeUser,
+            },
         };
     }
 
