@@ -144,6 +144,15 @@ export class AuthService {
             if (user) {
                 throw new BadRequestException('User with this email already exists and is verified');
             }
+        } else if (purpose === OtpPurpose.FORGOT_PASSWORD) {
+            const user = await this.prisma.user.findUnique({
+                where: {
+                    email,
+                },
+            });
+            if (!user) {
+                throw new BadRequestException('User with this email does not exist');
+            }
         }
 
         const otp = this.generateOtp();
