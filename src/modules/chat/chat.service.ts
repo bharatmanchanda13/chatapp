@@ -4,12 +4,14 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
 import { MessageStatus, MessageType, NotificationType } from '@prisma/client';
+import { OnlineUserService } from './online-user.service';
 
 @Injectable()
 export class ChatService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly notificationService: NotificationService,
+        private readonly onlineUserService: OnlineUserService,
     ) {}
 
     async sendMessage(dto: SendMessageDto) {
@@ -48,7 +50,23 @@ export class ChatService {
                 senderId: dto.senderId,
                 content: dto.content,
                 type: dto.type || MessageType.TEXT,
-                status: MessageStatus.SENT,
+                statuses: {
+                    create: participants.map((p) => {
+                        const isSender = p.userId === dto.senderId;
+                        const isUserOnline = this.onlineUserService.isOnline(p.userId);
+                        
+                        const status = isSender
+                            ? MessageStatus.SENT
+                            : (isUserOnline ? MessageStatus.DELIVERED : MessageStatus.SENT);
+                        const deliveredAt = (!isSender && isUserOnline) ? new Date() : null;
+
+                        return {
+                            userId: p.userId,
+                            status,
+                            deliveredAt,
+                        };
+                    }),
+                },
             },
 
             include: {
@@ -59,6 +77,7 @@ export class ChatService {
                         email: true,
                     },
                 },
+                statuses: true,
             },
         });
 
@@ -161,11 +180,12 @@ export class ChatService {
 
                     include: {
                         sender: {
-                        select: {
-                            id: true,
-                            name: true,
+                            select: {
+                                id: true,
+                                name: true,
+                            },
                         },
-                        },
+                        statuses: true,
                     },
                 },
             },
@@ -191,21 +211,31 @@ export class ChatService {
             throw new ForbiddenException('You cannot mark your own message as read');
         }
 
-        const updated = await this.prisma.message.update({
+        const updatedTracking = await this.prisma.messageTrackingStatus.upsert({
             where: {
-                id: messageId,
+                messageId_userId: {
+                    messageId,
+                    userId,
+                },
             },
-            data: {
+            update: {
                 status: MessageStatus.READ,
+                readAt: new Date(),
+            },
+            create: {
+                messageId,
+                userId,
+                status: MessageStatus.READ,
+                readAt: new Date(),
             },
         });
 
         return {
             success: true,
             message: 'Message marked as read',
-            messageId: updated.id,
-            conversationId: updated.conversationId,
-            status: updated.status,
+            messageId: message.id,
+            conversationId: message.conversationId,
+            status: updatedTracking.status,
         };
     }
 
@@ -227,7 +257,7 @@ export class ChatService {
                     {
                         blockerId: userA,
                         blockedId: userB,
-                    },
+                     },
                     {
                         blockerId: userB,
                         blockedId: userA,
@@ -237,5 +267,42 @@ export class ChatService {
         });
 
         return !!block;
+    }
+
+    async markMessagesAsDelivered(userId: number) {
+        // Find all tracking statuses for this user that are currently SENT
+        const undeliveredStatuses = await this.prisma.messageTrackingStatus.findMany({
+            where: {
+                userId,
+                status: MessageStatus.SENT,
+            },
+            include: {
+                message: {
+                    select: {
+                        id: true,
+                        senderId: true,
+                        conversationId: true,
+                    },
+                },
+            },
+        });
+
+        if (undeliveredStatuses.length === 0) return [];
+
+        // Update all these statuses to DELIVERED
+        const idsToUpdate = undeliveredStatuses.map((s) => s.id);
+        await this.prisma.messageTrackingStatus.updateMany({
+            where: {
+                id: {
+                    in: idsToUpdate,
+                },
+            },
+            data: {
+                status: MessageStatus.DELIVERED,
+                deliveredAt: new Date(),
+            },
+        });
+
+        return undeliveredStatuses;
     }
 }

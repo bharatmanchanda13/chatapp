@@ -6,7 +6,6 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { JwtModule } from './modules/jwt/jwt.module';
 import { FriendModule } from './modules/friend/friend.module';
 import { UserModule } from './modules/user/user.module';
-import { ChatService } from './modules/chat/chat.service';
 import { ConversationController } from './modules/conversation/conversation.controller';
 import { ConversationService } from './modules/conversation/conversation.service';
 import { ChatGateway } from './modules/chat/gateways/chat.gateway';
@@ -33,6 +32,6 @@ import { MasterDataModule } from './modules/master-data/master-data.module';
 @Module({
     imports: [AuthModule, PrismaModule, JwtModule, FriendModule, UserModule, ChatModule, ScheduleModule.forRoot(), NotificationModule, AlbumModule, EmailModule, ConfigModule.forRoot({isGlobal: true}), ReportModule, MasterDataModule],
     controllers: [AppController, ConversationController, ProfileController, MediaController, ReportController, MasterDataController],
-    providers: [AppService, ChatService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service, EmailService, MasterDataService],
+    providers: [AppService, ConversationService, ChatGateway, CallGateway, ProfileService, OtpCleanupService, MediaService, S3Service, EmailService, MasterDataService],
 })
 export class AppModule { }

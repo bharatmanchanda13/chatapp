@@ -49,6 +49,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         client.join(`user:${userId}`);
 
+        this.chatService.markMessagesAsDelivered(userId)
+            .then((updatedStatuses) => {
+                for (const status of updatedStatuses) {
+                    this.server
+                        .to(`user:${status.message.senderId}`)
+                        .emit('message-delivered', {
+                            messageId: status.messageId,
+                            userId: userId,
+                            conversationId: status.message.conversationId,
+                            status: 'DELIVERED',
+                            deliveredAt: new Date(),
+                        });
+                }
+            })
+            .catch((err) => {
+                console.error('Failed to mark incoming messages as delivered:', err);
+            });
+
         this.server.emit(
             CHAT_EVENTS.ONLINE_USERS,
             this.onlineUserService.getOnlineUsers(),

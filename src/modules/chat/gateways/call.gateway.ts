@@ -326,7 +326,12 @@ export class CallGateway implements OnGatewayDisconnect {
                     senderId: callerId,
                     content: content,
                     type: 'TEXT',
-                    status: 'SENT',
+                    statuses: {
+                        create: conversation.participants.map((p: any) => ({
+                            userId: p.userId,
+                            status: 'SENT',
+                        })),
+                    },
                 },
                 include: {
                     sender: {
@@ -336,6 +341,7 @@ export class CallGateway implements OnGatewayDisconnect {
                             email: true,
                         },
                     },
+                    statuses: true,
                 },
             });
 

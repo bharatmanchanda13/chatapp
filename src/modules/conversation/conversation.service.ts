@@ -35,7 +35,10 @@ export class ConversationService {
                     orderBy: {
                         createdAt: "desc"
                     },
-                    take: 1
+                    take: 1,
+                    include: {
+                        statuses: true
+                    }
                 }
             },
 
@@ -115,7 +118,10 @@ export class ConversationService {
                     orderBy: {
                         createdAt: 'desc'
                     },
-                    take: 1
+                    take: 1,
+                    include: {
+                        statuses: true
+                    }
                 }
             }
         });
@@ -165,7 +171,10 @@ export class ConversationService {
                     }
                 },
                 messages: {
-                    take: 1
+                    take: 1,
+                    include: {
+                        statuses: true
+                    }
                 }
             }
         });
@@ -223,7 +232,8 @@ export class ConversationService {
                                 id: true,
                                 name: true
                             }
-                        }
+                        },
+                        statuses: true
                     }
                 }
             }
