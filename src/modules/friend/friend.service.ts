@@ -282,6 +282,15 @@ export class FriendService {
             },
         });
 
+        await this.prisma.friendRequest.deleteMany({
+            where: {
+                OR: [
+                    { senderId: currentUserId, receiverId: friendship.userOneId },
+                    { senderId: currentUserId, receiverId: friendship.userTwoId },
+                ],
+            },
+        });
+
         return {
             message: 'User unfriended successfully',
         };
