@@ -1,9 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { SendMessageDto } from './dto/send-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
-import { MessageStatus, MessageType, NotificationType } from '@prisma/client';
+import { ConversationType, MessageStatus, MessageType, NotificationType } from '@prisma/client';
 import { OnlineUserService } from './online-user.service';
 
 @Injectable()
@@ -15,60 +15,125 @@ export class ChatService {
     ) {}
 
     async sendMessage(dto: SendMessageDto) {
+        let conversationId = dto.conversationId;
+
+        // Create conversation if it doesn't exist
+        if (!conversationId) {
+            if (!dto.receiverId) {
+                throw new BadRequestException('receiverId is required');
+            }
+
+            // Check if direct conversation already exists
+            const existingConversation = await this.prisma.conversation.findFirst({
+                where: {
+                    type: ConversationType.DIRECT,
+                    participants: {
+                        every: {
+                            userId: {
+                                in: [dto.senderId, dto.receiverId],
+                            },
+                        },
+                    },
+                },
+                include: {
+                    participants: true,
+                },
+            });
+
+            if (
+                existingConversation &&
+                existingConversation.participants.length === 2
+            ) {
+                conversationId = existingConversation.id;
+            } else {
+                // Create new conversation
+                const conversation = await this.prisma.conversation.create({
+                    data: {
+                        type: ConversationType.DIRECT,
+                        createdById: dto.senderId,
+                        participants: {
+                            create: [
+                                {
+                                    userId: dto.senderId,
+                                },
+                                {
+                                    userId: dto.receiverId,
+                                },
+                            ],
+                        },
+                    },
+                });
+
+                conversationId = conversation.id;
+            }
+        }
+
         const participant = await this.prisma.conversationParticipant.findFirst({
             where: {
-                conversationId: dto.conversationId,
+                conversationId,
                 userId: dto.senderId,
             },
         });
 
         if (!participant) {
-            throw new ForbiddenException('You are not part of this conversation');
+            throw new ForbiddenException(
+                'You are not part of this conversation',
+            );
         }
 
-        const participants = await this.prisma.conversationParticipant.findMany({
-            where: {
-                conversationId: dto.conversationId,
-            },
-            select: {
-                userId: true,
-            },
-        });
-        const otherUser = participants.find((p) => p.userId !== dto.senderId);
+        const participants =
+            await this.prisma.conversationParticipant.findMany({
+                where: {
+                    conversationId,
+                },
+                select: {
+                    userId: true,
+                },
+            });
+
+        const otherUser = participants.find(
+            (p) => p.userId !== dto.senderId,
+        );
 
         if (!otherUser) {
-            throw new ForbiddenException('Conversation participant not found');
+            throw new ForbiddenException(
+                'Conversation participant not found',
+            );
         }
 
         if (await this.isBlocked(dto.senderId, otherUser.userId)) {
-            throw new ForbiddenException('Messaging is not allowed because one user has blocked the other');
+            throw new ForbiddenException(
+                'Messaging is not allowed because one user has blocked the other',
+            );
         }
 
         const message = await this.prisma.message.create({
             data: {
-                conversationId: dto.conversationId,
+                conversationId,
                 senderId: dto.senderId,
                 content: dto.content,
                 type: dto.type || MessageType.TEXT,
                 statuses: {
                     create: participants.map((p) => {
                         const isSender = p.userId === dto.senderId;
-                        const isUserOnline = this.onlineUserService.isOnline(p.userId);
-                        
-                        const status = isSender
-                            ? MessageStatus.SENT
-                            : (isUserOnline ? MessageStatus.DELIVERED : MessageStatus.SENT);
-                        const deliveredAt = (!isSender && isUserOnline) ? new Date() : null;
+                        const isUserOnline =
+                            this.onlineUserService.isOnline(p.userId);
 
                         return {
                             userId: p.userId,
-                            status,
-                            deliveredAt,
+                            status: isSender
+                                ? MessageStatus.SENT
+                                : isUserOnline
+                                ? MessageStatus.DELIVERED
+                                : MessageStatus.SENT,
+                            deliveredAt:
+                                !isSender && isUserOnline
+                                    ? new Date()
+                                    : null,
                         };
                     }),
                 },
             },
-
             include: {
                 sender: {
                     select: {
@@ -80,16 +145,6 @@ export class ChatService {
                 statuses: true,
             },
         });
-
-        this.notificationService.sendAndSave(otherUser.userId, `New message from ${message.sender.name}`,
-            dto.content,
-            NotificationType.NEW_MESSAGE,
-            {
-                conversationId: String(dto.conversationId),
-                messageId: String(message.id),
-                senderId: String(dto.senderId),
-            }
-        ).catch((err) => console.error('Failed to send new message notification:', err));
 
         return message;
     }

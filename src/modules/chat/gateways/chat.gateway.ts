@@ -73,14 +73,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
     }
 
-	// handleDisconnect(client: SocketUser) {
-	// 	this.onlineUserService.removeUser(client.id);
-
-	// 	this.server.emit(CHAT_EVENTS.ONLINE_USERS, this.onlineUserService.getOnlineUsers());
-        
-	// 	console.log('User Disconnected:', client.id);
-	// }
-
     handleDisconnect(client: Socket) {
         this.onlineUserService.removeUser(
             client.id,
